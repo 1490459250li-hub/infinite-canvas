@@ -435,6 +435,7 @@ DEFAULT_ROUTES = {
     "polish": "sensenova:sensenova-6.8-flash",
 }
 
+_STATE_LOCK = threading.RLock()  # v3.8.6：保护多线程共享缓存（_ENV_CACHE/_KEY_RR/_CATALOG/_SEEDREAM_CHANNEL）
 _KEY_RR = {}          # provider -> 下一次先用第几把钥匙
 
 
@@ -494,8 +495,9 @@ def _env_sig(path: str):
 def env_map() -> dict:
     path = env_path()
     sig = _env_sig(path)
-    if sig is not None and _ENV_CACHE["sig"] == sig:
-        return dict(_ENV_CACHE["data"])
+    with _STATE_LOCK:
+        if sig is not None and _ENV_CACHE["sig"] == sig:
+            return dict(_ENV_CACHE["data"])
     data = {}
     if os.path.exists(path):
         try:
@@ -509,8 +511,9 @@ def env_map() -> dict:
         except OSError as exc:
             log("read .env failed: %s" % exc)
     if sig is not None:
-        _ENV_CACHE["sig"] = sig
-        _ENV_CACHE["data"] = data
+        with _STATE_LOCK:
+            _ENV_CACHE["sig"] = sig
+            _ENV_CACHE["data"] = data
     return dict(data)
 
 
@@ -524,8 +527,9 @@ def env_write(data: dict) -> None:
         fh.write("\n".join("%s=%s" % (k, v) for k, v in data.items()) + "\n")
     os.replace(tmp, target)
     # 签名可能因同一时间片内的写入而不变，写完全局失效一次更稳
-    _ENV_CACHE["sig"] = None
-    _ENV_CACHE["data"] = {}
+    with _STATE_LOCK:
+        _ENV_CACHE["sig"] = None
+        _ENV_CACHE["data"] = {}
     try:
         os.chmod(target, stat.S_IRUSR | stat.S_IWUSR)
     except OSError:
@@ -830,7 +834,7 @@ LOG_PATH = os.path.join(data_dir(), "app.log")
 # v2.6 · B2 自动更新通道：版本清单放在 exe 同目录的 update.json，
 # 结构 {"latest":"2.6.0","notes":"...","url":"https://..."}。没有清单也不报错，
 # 前端「检查更新」会明确提示"未配置版本清单"。
-APP_VERSION = "3.8.5"
+APP_VERSION = "3.8.6"
 
 # 本次进程实际拿到 / 想要的端口。端口是 IndexedDB 的 origin 的一部分，
 # 换了端口就等于换了"站点"，旧画布看不到。这两个数字只用于在页面上说清楚。
@@ -2018,9 +2022,10 @@ def _text_label(model_id: str) -> str:
 def fetch_catalog(key: str, force: bool = False) -> dict:
     """拉 /v1/models 并按能力分类。图片模型只认白名单里验证过的两个。"""
     now = time.time()
-    ttl = CATALOG_TTL_ERR if _CATALOG["error"] else CATALOG_TTL
-    if not force and _CATALOG["at"] and (now - _CATALOG["at"]) < ttl:
-        return _CATALOG
+    with _STATE_LOCK:
+        ttl = CATALOG_TTL_ERR if _CATALOG["error"] else CATALOG_TTL
+        if not force and _CATALOG["at"] and (now - _CATALOG["at"]) < ttl:
+            return dict(_CATALOG)
 
     raw, error, vision = [], "", set()
     if key:
@@ -2061,15 +2066,16 @@ def fetch_catalog(key: str, force: bool = False) -> dict:
         return TEXT_ORDER.index(m) if m in TEXT_ORDER else 99
 
     text.sort(key=lambda m: (text_key(m), m))
-    _CATALOG.update({
-        "at": now,
-        "image": image,
-        "text": [{"id": m, "label": _text_label(m), "vendor": _vendor_of(m),
-                  "vision": m in vision} for m in text],
-        "raw": raw,
-        "error": error,
-    })
-    return _CATALOG
+    with _STATE_LOCK:
+        _CATALOG.update({
+            "at": now,
+            "image": image,
+            "text": [{"id": m, "label": _text_label(m), "vendor": _vendor_of(m),
+                      "vision": m in vision} for m in text],
+            "raw": raw,
+            "error": error,
+        })
+        return dict(_CATALOG)
 
 
 def default_text_model(catalog: dict) -> str:
@@ -2639,7 +2645,8 @@ def _seedream_attempts(entry, key: str = ""):
     plan_base = (entry.get("plan_base") or "").rstrip("/")
     plan_id = entry.get("plan_id") or ""
     seq = []
-    cached = _SEEDREAM_CHANNEL.get(tag)
+    with _STATE_LOCK:
+        cached = _SEEDREAM_CHANNEL.get(tag)
     if cached:
         seq.append(cached)
     if plan_base:
@@ -2780,7 +2787,8 @@ def split_seedream_layers(key, entry, req):
             return {"ok": False, "code": "server",
                     "error": str(msg or "图层拆分没有返回图片数据")}
         layers.sort(key=lambda L: L["z_index"])
-        _SEEDREAM_CHANNEL[_seedream_tag(entry, key)] = (base, model)
+        with _STATE_LOCK:
+            _SEEDREAM_CHANNEL[_seedream_tag(entry, key)] = (base, model)
         return {"ok": True, "layers": layers, "model": entry["id"],
                 "usage": data.get("usage") or {},
                 "channel": ("plan" if "/plan/" in base else "pay")}
@@ -2879,7 +2887,8 @@ def render_seedream(key, entry, req):
             err = data.get("error")
             msg = err.get("message") if isinstance(err, dict) else ""
             return {"ok": False, "code": "server", "error": str(msg or "接口没有返回图片数据")}
-        _SEEDREAM_CHANNEL[_seedream_tag(entry, key)] = (base, model)
+        with _STATE_LOCK:
+            _SEEDREAM_CHANNEL[_seedream_tag(entry, key)] = (base, model)
         # 方舟会在 data[0].size 里回真实像素（模型可能对对齐做了微调），比请求值准
         got = str((item or {}).get("size") or "")
         return {"ok": True, "b64": b64,
@@ -3652,7 +3661,9 @@ class Handler(BaseHTTPRequestHandler):
             self._json(update_info())
             return
         if path == "/api/logs/open":
-            self._json(open_logs_dir())
+            # v3.8.6 安全修复：打开本地目录属于带副作用操作，禁止 GET（防止跨站 <img> 静默触发），请改用 POST
+            self._json({"ok": False, "code": "method_not_allowed",
+                        "error": "请使用 POST /api/logs/open"}, 405)
             return
         if path == "/api/logs/tail":
             self._json({"ok": True, "path": LOG_PATH, "text": log_tail()})
@@ -3718,6 +3729,10 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path == "/api/update/apply":
             self._json(update_apply())
+            return
+        # v3.8.6 安全修复：打开日志目录走 POST + _api_guard 跨站防护
+        if path == "/api/logs/open":
+            self._json(open_logs_dir())
             return
 
         if path == "/api/config":
@@ -4118,8 +4133,9 @@ class Handler(BaseHTTPRequestHandler):
 
         # 同家多把钥匙时轮流先用，遇到 401 自动换下一把——
         # 一个账号欠费 / 被限流不该让整张画布卡死。
-        start = _KEY_RR.get(pid, 0) % len(keys)
-        _KEY_RR[pid] = start + 1
+        with _STATE_LOCK:
+            start = _KEY_RR.get(pid, 0) % len(keys)
+            _KEY_RR[pid] = start + 1
         ordered = keys[start:] + keys[:start]
 
         started = time.time()
@@ -4315,17 +4331,48 @@ def _drag_thread(hwnd: int, zone: str, token: int, min_w: int, min_h: int):
             _DRAG["alive"] = False
 
 
-def _apply_window_region(hwnd: int, radius_css: float = 11.0) -> bool:
-    """把窗口裁成圆角矩形。
+def _is_win11() -> bool:
+    try:
+        return sys.platform.startswith("win") and sys.getwindowsversion().build >= 22000
+    except Exception:
+        return False
 
-    Windows 10 没有 DWMWA_WINDOW_CORNER_PREFERENCE（那是 Win11 才有的），
-    无边框窗口的四个角只能靠 SetWindowRgn 硬裁。不裁的话：页面自己的圆角是
-    透明的，透出来的是 WinForms 窗体的底色（240,240,240 浅灰），
-    每个角上就多出一个浅灰小方块 —— 就是用户看到的「圆角有问题」。
 
-    半径比 CSS 的 10px 多 1px：页面的圆角边缘有一圈抗锯齿过渡像素，
-    正好落在裁剪线外侧被切掉，不然角上会留一条细细的浅色描边。
-    """
+def _apply_dwm_frame(hwnd: int, zoomed: bool = False) -> bool:
+    """v3.8.6 · Win11 优先走原生 DWM 硬件抗锯齿圆角 + 原生窗口阴影。"""
+    if not hwnd or not _is_win11():
+        return False
+    try:
+        import ctypes
+        from ctypes import wintypes as wt
+
+        dwmapi = ctypes.windll.dwmapi
+        dwmapi.DwmSetWindowAttribute.argtypes = [
+            wt.HWND, wt.DWORD, ctypes.c_void_p, wt.DWORD
+        ]
+        dwmapi.DwmSetWindowAttribute.restype = ctypes.c_long
+        # DWMWA_WINDOW_CORNER_PREFERENCE = 33; DWMWCP_DONOTROUND = 1, DWMWCP_ROUND = 2
+        pref = ctypes.c_int(1 if zoomed else 2)
+        hr = dwmapi.DwmSetWindowAttribute(int(hwnd), 33, ctypes.byref(pref), ctypes.sizeof(pref))
+        if hr != 0:
+            return False
+
+        # 扩展 1px 客户端边框以唤醒 DWM 原生投影（无边框窗体默认无系统阴影）
+        class _MARGINS(ctypes.Structure):
+            _fields_ = [("cxLeftWidth", ctypes.c_int), ("cxRightWidth", ctypes.c_int),
+                        ("cyTopHeight", ctypes.c_int), ("cyBottomHeight", ctypes.c_int)]
+        m = _MARGINS(0, 0, 0, 0) if zoomed else _MARGINS(1, 1, 1, 1)
+        dwmapi.DwmExtendFrameIntoClientArea.argtypes = [wt.HWND, ctypes.POINTER(_MARGINS)]
+        dwmapi.DwmExtendFrameIntoClientArea.restype = ctypes.c_long
+        dwmapi.DwmExtendFrameIntoClientArea(int(hwnd), ctypes.byref(m))
+        return True
+    except Exception as exc:
+        log("dwm frame failed: %s" % exc)
+        return False
+
+
+def _apply_window_region(hwnd: int, radius_css: float = 12.0) -> bool:
+    """把窗口裁成圆角矩形：Win11 优先原生 DWM 抗锯齿圆角+阴影，Win10 兜底 SetWindowRgn。"""
     if not hwnd:
         return False
     try:
@@ -4342,14 +4389,19 @@ def _apply_window_region(hwnd: int, radius_css: float = 11.0) -> bool:
         gdi32.CreateRoundRectRgn.argtypes = [ctypes.c_int] * 6
         gdi32.CreateRoundRectRgn.restype = wt.HRGN
 
+        zoomed = bool(user32.IsZoomed(int(hwnd)))
+        if _apply_dwm_frame(hwnd, zoomed=zoomed):
+            # 确保没有残留的 GDI 硬裁剪区干扰 DWM 抗锯齿
+            user32.SetWindowRgn(int(hwnd), None, True)
+            return True
+
         rect = wt.RECT()
         if not user32.GetWindowRect(int(hwnd), ctypes.byref(rect)):
             return False
         w, h = rect.right - rect.left, rect.bottom - rect.top
         if w <= 0 or h <= 0:
             return False
-        if user32.IsZoomed(int(hwnd)):
-            # 最大化时贴边显示直角才自然，顺手把区域清掉（否则屏幕边缘会留缝）
+        if zoomed:
             user32.SetWindowRgn(int(hwnd), None, True)
             return True
 
@@ -4362,7 +4414,6 @@ def _apply_window_region(hwnd: int, radius_css: float = 11.0) -> bool:
         rgn = gdi32.CreateRoundRectRgn(0, 0, w + 1, h + 1, rad * 2, rad * 2)
         if not rgn:
             return False
-        # SetWindowRgn 成功后区域归系统所有，不要再 DeleteObject
         return bool(user32.SetWindowRgn(int(hwnd), rgn, True))
     except Exception as exc:
         log("window region failed: %s" % exc)
