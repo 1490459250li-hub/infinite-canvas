@@ -834,7 +834,7 @@ LOG_PATH = os.path.join(data_dir(), "app.log")
 # v2.6 · B2 自动更新通道：版本清单放在 exe 同目录的 update.json，
 # 结构 {"latest":"2.6.0","notes":"...","url":"https://..."}。没有清单也不报错，
 # 前端「检查更新」会明确提示"未配置版本清单"。
-APP_VERSION = "3.8.13"
+APP_VERSION = "3.8.14"
 
 # 本次进程实际拿到 / 想要的端口。端口是 IndexedDB 的 origin 的一部分，
 # 换了端口就等于换了"站点"，旧画布看不到。这两个数字只用于在页面上说清楚。
@@ -4901,12 +4901,8 @@ def _splash_thread(ver: str, ready) -> None:
                 g.SetStretchBltMode(hdc, 4)    # HALFTONE
                 g.StretchBlt(hdc, 0, 0, win_w, win_h, hdc_mem,
                              0, 0, fw, fh, 0x00CC0020)   # SRCCOPY
-                # 状态文字压在最后一帧留白处：左下角一行，右下角版本号
-                if st["msg"]:
-                    draw_text(hdc, int(24 * scale), win_h - int(38 * scale),
-                              st["msg"], fonts["tip"], _SP_MUTED)
-                draw_text(hdc, win_w - int(92 * scale), win_h - int(38 * scale),
-                          "v" + ver, fonts["tip"], 0x3A3F4A)
+                # v3.8.14：片源自带底部进度条与标题版式，再往上压状态文字和版本号
+                # 就是两套排版打架 —— 视频态只贴帧，文字只留给没有片源时的兜底界面。
                 return
             # ---- 兜底：没有 splash.dat 时，退回最朴素的一块牌子 ----
             fill(hdc, 0, 0, _SPLASH_W, _SPLASH_H, _SP_BG)
