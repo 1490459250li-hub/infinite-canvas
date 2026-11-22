@@ -1,0 +1,74 @@
+name: Build Windows Upgrade Installer
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows-setup:
+    runs-on: windows-latest
+    env:
+      PYTHONUTF8: "1"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Obfuscate frontend (canvas.src.html -> canvas.html)
+        shell: pwsh
+        run: |
+          if (Test-Path "tools/package.json") {
+            Push-Location tools
+            npm ci
+            node obfuscate.mjs
+            Pop-Location
+          }
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python build dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller requests pywebview
+
+      - name: Build onedir app with PyInstaller
+        shell: pwsh
+        run: |
+          Push-Location proto
+          if (Test-Path "infinite-canvas.spec") {
+            Copy-Item -Force "infinite-canvas.spec" "无限画布.spec"
+            python -m PyInstaller --noconfirm --clean infinite-canvas.spec
+          } else {
+            python -m PyInstaller --noconfirm --clean "无限画布.spec"
+          }
+          if (Test-Path "dist/无限画布/.env") {
+            Remove-Item -Force "dist/无限画布/.env"
+          }
+          Pop-Location
+
+      - name: Build self-extracting upgrade installer (.exe)
+        shell: pwsh
+        run: |
+          python installer/make_setup.py --src "proto/dist/无限画布"
+          Get-ChildItem "proto/dist/installer"
+
+      - name: Upload Windows Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: infinite-canvas-setup-win64
+          path: proto/dist/installer/*.exe
+          if-no-files-found: error
