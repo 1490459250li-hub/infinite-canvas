@@ -328,13 +328,9 @@ html.snc-shell #sncWinFrame.is-max .snc-edge{ display:none; }
   vector-effect:non-scaling-stroke;
   transition:stroke-dashoffset .09s linear;   /* 比 200ms 的刷新间隔短，环才不会恒定落后数字一个周期 */
 }
-/* v3.7.7 · 方案 B：等待上游响应期间没有真实百分比，改用流动的「不确定环」，
-   并且把百分比徽标藏起来 —— 不再拿时间曲线冒充模型进度。 */
-#snc .snc-prog-ring.is-indet path{
-  stroke-dasharray:18 14 !important;
-  animation:sncRingFlow .85s linear infinite;
-}
-@keyframes sncRingFlow{from{stroke-dashoffset:0}to{stroke-dashoffset:-32}}
+/* v3.7.7 · 方案 B 的「不确定环」虚线跑马灯已被 v3.8.6 彗星流光环取代（ai.html 方案二）。
+   v3.8.11：删掉这里的 stroke-dasharray:18 14 !important —— 它的 !important 会盖掉
+   JS 按真实周长算出的 28% 彗星长度，环会退化成整圈小虚线，且看不到拖尾。 */
 #snc .snc-prog-pct{
   position:absolute; left:9px; top:9px; z-index:4; pointer-events:none;
   font-size:10.5px; line-height:1; padding:5px 8px; border-radius:999px;
@@ -2712,19 +2708,26 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
   box-shadow:0 0 0 1.5px var(--accent), 0 18px 44px -14px var(--accent-glow);
 }
 
-/* AI 生成中：同心静谧底轨 + 发光彗星流光环 */
+/* AI 生成中：同心静谧底轨 + 发光彗星流光环
+   v3.8.11：数值与 ai.html 参考稿逐项对齐 —— 底轨 1.6px/.16、彗星 2.5px/6px 光晕。
+   原先这里写死 stroke:var(--accent)，CSS 会盖掉 SVG 上的 stroke="url(#渐变)"，
+   导致彗星变成一根实心色条、没有拖尾衰减。改成读 --snc-arc（没设渐变时才用实色）。 */
 #snc .snc-prog-ring path.snc-prog-track{
-  fill:none; stroke:var(--accent); stroke-width:1.5;
-  opacity:.18; vector-effect:non-scaling-stroke;
+  fill:none; stroke:var(--accent); stroke-width:1.6;
+  opacity:.16; vector-effect:non-scaling-stroke;
   transition:opacity .3s ease;
 }
 #snc .snc-prog-ring path.snc-prog-arc{
-  fill:none; stroke:var(--accent); stroke-width:2.4;
+  fill:none; stroke:var(--snc-arc, var(--accent)); stroke-width:2.5;
   stroke-linejoin:round; stroke-linecap:round;
   vector-effect:non-scaling-stroke;
   filter:drop-shadow(0 0 6px var(--accent-glow));
   transition:stroke-dashoffset .18s cubic-bezier(.22,1,.36,1);
 }
+/* 三档阶段：排队 8%/.55、已提交 22%/.95、渲染中 28%/1（长度由 JS 按真实周长算） */
+#snc .snc-gen.is-queued .snc-prog-arc{ opacity:.55; }
+#snc .snc-gen.is-submitted .snc-prog-arc{ opacity:.95; }
+#snc .snc-gen.is-waiting .snc-prog-arc{ opacity:1; }
 #snc .snc-prog-ring.is-indet path.snc-prog-arc{
   stroke-dasharray:initial;
   animation:sncCometOrbit 2.15s linear infinite;
@@ -2884,10 +2887,6 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
 #snc .snc-gen-cancel:hover{
   border-color:var(--err-fg); color:var(--err-fg); background:var(--err-bg);
 }
-#snc .snc-prog-ring path.snc-prog-arc{
-  stroke-width:2.6;
-  filter:drop-shadow(0 0 7px var(--accent-glow));
-}
 
 /* ============================================================================
    v3.8.9 · 生成/排队中隐藏实心蓝框与缩放白点 + rAF 60fps 彗星流光环
@@ -2909,8 +2908,10 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
   animation:none !important;
   transition:none !important;
 }
-#snc .snc-gen.is-queued .snc-gen-latent{ opacity:.14; }
-#snc .snc-gen.is-queued .snc-prog-arc{ opacity:.55; }
+/* 原图潜影按阶段递进：排队 .14 → 已提交 .20 → 渲染中 .28（带呼吸，见 sncLatentBreath） */
+#snc .snc-gen.is-queued .snc-gen-latent{ opacity:.14; animation:none; }
+#snc .snc-gen.is-submitted .snc-gen-latent{ opacity:.20; animation:none; }
+#snc .snc-gen.is-waiting .snc-gen-latent{ opacity:.28; }
 </style>
 </head>
 <body>
@@ -5582,6 +5583,10 @@ var root = document.getElementById("snc");
         path.style.strokeDashoffset = f(P * (1 - pct / 100));
       }
       path.dataset.perimeter = f(P);
+      /* 记下这次量算时的真实像素尺寸：卡片首帧可能还没排版（只有 100×100），
+         等布局完成尺寸变了要重量一次，否则 viewBox 100×100 会把整圈虚线横向拉伸。 */
+      path.dataset.rw = W;
+      path.dataset.rh = H;
     }
     var badge = host.querySelector(".snc-prog-pct");
     if(badge) badge.textContent = Math.round(pct) + "%";
@@ -5602,6 +5607,21 @@ var root = document.getElementById("snc");
     }
     for(var i = 0; i < arcs.length; i++){
       var p = arcs[i];
+      var svg = p.parentNode;
+      /* 重量时要拿到卡片本体（.snc-node-body），圆角从它身上读；
+         只上溯一层会拿到 .snc-gen，圆角读成 3px，四个角会塌成直角。 */
+      var host = svg ? (svg.closest ? svg.closest(".snc-node-body") : null) || svg.parentNode : null;
+      if(svg && host && (Math.round(parseFloat(p.dataset.rw) || 0) !== Math.round(svg.clientWidth) ||
+                         Math.round(parseFloat(p.dataset.rh) || 0) !== Math.round(svg.clientHeight))){
+        setGenProgress(host, 0);
+        var pw = parseFloat(p.dataset.perimeter) || 0;
+        if(pw > 0){
+          var cw = Math.max(52, pw * 0.28);
+          p.style.strokeDasharray = cw.toFixed(2) + " " + Math.max(10, pw - cw).toFixed(2);
+          p.style.strokeDashoffset = "0";
+          p.dataset.cometOff = "0";
+        }
+      }
       var perim = parseFloat(p.dataset.perimeter) || 600;
       var off = (parseFloat(p.dataset.cometOff) || 0) + perim * 0.42 * dt;
       if(off >= perim) off -= perim;
@@ -5674,6 +5694,39 @@ var root = document.getElementById("snc");
         cancelJob(n);
       });
       setGenProgress(host, isQueued ? 8 : (n.progress || 0));
+      /* v3.8.11：SVG 上的 stroke="url(#渐变)" 会被 CSS 的 stroke 覆盖，
+         所以把渐变地址写进 --snc-arc 让 CSS 变量去取（见 .snc-prog-arc）。 */
+      var ringEl = host.querySelector(".snc-prog-ring");
+      var arcEl = ringEl && ringEl.querySelector("path.snc-prog-arc");
+      if(ringEl && arcEl){
+        ringEl.style.setProperty("--snc-arc", "url(#" + gradId + ")");
+        if(!isQueued){
+          /* 渲染中：首帧就是 28% 彗星，而不是先显示一条 0% 的空环再等 setPhase */
+          var pW = parseFloat(arcEl.dataset.perimeter) || 600;
+          var cW = Math.max(52, pW * 0.28);
+          ringEl.classList.add("is-indet");
+          arcEl.style.strokeDasharray = cW.toFixed(2) + " " + Math.max(10, pW - cW).toFixed(2);
+          arcEl.dataset.cometOff = "0";
+          arcEl.style.strokeDashoffset = "0";
+          _ensureCometLoop();
+        }
+        /* 这一帧卡片还没排版（body 刚写进去），几何是按 100×100 算的。
+           等下一帧布局完成，按真实尺寸重量一次；三种阶段都要，否则排队/已提交的
+           短弧也会跟着 viewBox 被横向拉长。 */
+        requestAnimationFrame(function(){
+          if(!ringEl || !document.body.contains(ringEl)) return;
+          setGenProgress(host, isQueued ? 8 : (n.progress || 0));
+          if(!ringEl.classList.contains("is-indet")) return;
+          var p2 = ringEl.querySelector("path.snc-prog-arc");
+          var pv = p2 && parseFloat(p2.dataset.perimeter);
+          if(p2 && pv > 0){
+            var c2 = Math.max(52, pv * 0.28);
+            p2.style.strokeDasharray = c2.toFixed(2) + " " + Math.max(10, pv - c2).toFixed(2);
+            p2.style.strokeDashoffset = "0";
+            p2.dataset.cometOff = "0";
+          }
+        });
+      }
     } else if(n.status === "done"){
       var media = photoHTML(n, n.w, n.h) ||
                   artSVG(n.seed || n.id, Math.round(n.w*2), Math.round(n.h*2), n.variant || 0, n.mood);
@@ -9473,6 +9526,12 @@ var root = document.getElementById("snc");
       var path = ring && (ring.querySelector("path.snc-prog-arc") || ring.querySelector("path"));
       var stTxt = h.querySelector(".snc-gen-stagetxt");
       if(stTxt) stTxt.textContent = cfg.text;
+      var wrap = h.querySelector(".snc-gen");
+      if(wrap){
+        wrap.classList.toggle("is-queued", p === "queued");
+        wrap.classList.toggle("is-submitted", p === "submitted");
+        wrap.classList.toggle("is-waiting", p === "waiting" || p === "received");
+      }
       if(p === "waiting"){
         /* v3.8.7 · 彗星流光环绕：按真实周长取 28% 渐变光束顺时针丝滑绕行 */
         setGenProgress(h, 0);
