@@ -834,7 +834,7 @@ LOG_PATH = os.path.join(data_dir(), "app.log")
 # v2.6 · B2 自动更新通道：版本清单放在 exe 同目录的 update.json，
 # 结构 {"latest":"2.6.0","notes":"...","url":"https://..."}。没有清单也不报错，
 # 前端「检查更新」会明确提示"未配置版本清单"。
-APP_VERSION = "3.8.7"
+APP_VERSION = "3.8.9"
 
 # 本次进程实际拿到 / 想要的端口。端口是 IndexedDB 的 origin 的一部分，
 # 换了端口就等于换了"站点"，旧画布看不到。这两个数字只用于在页面上说清楚。

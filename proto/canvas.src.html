@@ -87,6 +87,7 @@ body{ position:fixed; inset:0; }
   /* 强调色的三个衍生档：光晕 / 大面积淡底 / 描边。
      以前这些在样式里写死成暖橙，换到冷灰主题就露馅。 */
   --accent-strong:#c9532f;
+  --accent-bright:#ff9c78;
   --accent-glow:rgba(224,96,58,.5);
   --accent-wash:rgba(224,96,58,.09);
   --accent-line:rgba(224,96,58,.32);
@@ -195,6 +196,7 @@ html.snc-shell #sncWinFrame.is-max .snc-edge{ display:none; }
   --scrim:rgba(0,0,0,.66);
   --accent:#4d6bfe; --accent-soft:rgba(77,107,254,.16);
   --accent-strong:#3f5cf2;
+  --accent-bright:#8ba4ff;
   --accent-glow:rgba(77,107,254,.5);
   --accent-wash:rgba(77,107,254,.10);
   --accent-line:rgba(77,107,254,.34);
@@ -228,6 +230,7 @@ html.snc-shell #sncWinFrame.is-max .snc-edge{ display:none; }
   --scrim:rgba(28,28,34,.26);
   --accent:#4d6bfe; --accent-soft:rgba(77,107,254,.12);
   --accent-strong:#3f5cf2;
+  --accent-bright:#7e98ff;
   --accent-glow:rgba(77,107,254,.4);
   --accent-wash:rgba(77,107,254,.07);
   --accent-line:rgba(77,107,254,.3);
@@ -2762,7 +2765,8 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
   position:relative; z-index:2;
   display:inline-flex; align-items:center; gap:7px;
   padding:5px 12px; border-radius:999px;
-  background:rgba(12,14,19,.72); color:#f3f4f8;
+  font-size:11.5px; font-weight:500; line-height:1.25;
+  background:rgba(14,16,22,.72); color:#fff;
   backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
   border:1px solid rgba(255,255,255,.12);
   box-shadow:0 8px 20px -10px rgba(0,0,0,.6);
@@ -2824,7 +2828,7 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
    ============================================================================ */
 /* 1. 画布窗口四边呼吸灯（设置 → 外观主题「画布窗口呼吸灯」开关控制 .breath-on） */
 #snc .snc-breath-lamp{
-  position:absolute; inset:0; z-index:4; pointer-events:none;
+  position:absolute; top:44px; left:0; right:0; bottom:0; z-index:4; pointer-events:none;
   opacity:0; transition:opacity .45s ease;
 }
 #snc .snc-breath-lamp::before{
@@ -2858,8 +2862,8 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
 }
 #snc .snc-gen-q{
   position:relative; z-index:2;
-  font-size:11.5px; line-height:1.48; color:var(--ink2);
-  -webkit-line-clamp:2; max-height:calc(1.48em * 2);
+  font-size:12px; line-height:1.5; color:var(--ink2); max-width:92%;
+  -webkit-line-clamp:2; max-height:calc(1.5em * 2);
 }
 #snc .snc-gen-subrow{
   position:relative; z-index:2;
@@ -2868,7 +2872,7 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
 }
 #snc .snc-gen-subrow .snc-gen-meta{
   font-family:ui-monospace,"JetBrains Mono",Consolas,monospace;
-  font-size:10.5px; color:var(--muted);
+  font-size:11px; color:var(--muted);
 }
 #snc .snc-gen-cancel{
   border:1px solid var(--line2); background:var(--raise); color:var(--ink2);
@@ -2882,6 +2886,29 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
   stroke-width:2.6;
   filter:drop-shadow(0 0 7px var(--accent-glow));
 }
+
+/* ============================================================================
+   v3.8.9 · 生成/排队中隐藏实心蓝框与缩放白点 + rAF 60fps 彗星流光环
+   ============================================================================ */
+#snc .snc-node.is-gen-busy.is-sel{
+  box-shadow:none !important;
+}
+#snc .snc-node.is-gen-busy .snc-handle{
+  opacity:0 !important; pointer-events:none !important;
+}
+#snc .snc-node.is-gen-busy[data-type="gen"] .snc-node-body{
+  box-shadow:0 22px 56px -16px rgba(0,0,0,.75), 0 0 38px -14px var(--accent-glow) !important;
+}
+#snc[data-theme="light"] .snc-node.is-gen-busy[data-type="gen"] .snc-node-body{
+  box-shadow:0 20px 46px -18px rgba(24,30,48,.22), 0 0 28px -12px var(--accent-glow) !important;
+}
+/* 流光绕行由 JS rAF 精确驱动，关掉依赖 calc(var()) 的 CSS 动画，避免 transition 拖尾抖动 */
+#snc .snc-prog-ring.is-indet path.snc-prog-arc{
+  animation:none !important;
+  transition:none !important;
+}
+#snc .snc-gen.is-queued .snc-gen-latent{ opacity:.14; }
+#snc .snc-gen.is-queued .snc-prog-arc{ opacity:.55; }
 </style>
 </head>
 <body>
@@ -3568,7 +3595,7 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
             </span>
             <div class="snc-about-id">
               <b>无限画布</b>
-              <span id="sncAboutVer">v3.8.7 · 静谧微光版 · 本地桥接</span>
+              <span id="sncAboutVer">v3.8.9 · 静谧微光版 · 本地桥接</span>
             </div>
           </div>
           <dl class="snc-about-list">
@@ -5558,18 +5585,43 @@ var root = document.getElementById("snc");
     if(badge) badge.textContent = Math.round(pct) + "%";
   }
 
+  /* v3.8.9 · 60fps 彗星流光环 rAF 引擎（与 ai.html 一致，无生成任务时自动停转） */
+  var _sncCometRaf = 0;
+  var _sncCometLast = 0;
+  function _sncCometStep(ts){
+    if(!_sncCometLast) _sncCometLast = ts;
+    var dt = Math.min(0.05, (ts - _sncCometLast) / 1000);
+    _sncCometLast = ts;
+    var arcs = world ? world.querySelectorAll(".snc-prog-ring.is-indet path.snc-prog-arc") : [];
+    if(!arcs.length){
+      _sncCometRaf = 0;
+      _sncCometLast = 0;
+      return;
+    }
+    for(var i = 0; i < arcs.length; i++){
+      var p = arcs[i];
+      var perim = parseFloat(p.dataset.perimeter) || 600;
+      var off = (parseFloat(p.dataset.cometOff) || 0) + perim * 0.42 * dt;
+      if(off >= perim) off -= perim;
+      p.dataset.cometOff = off.toFixed(2);
+      p.style.strokeDashoffset = (-off).toFixed(2);
+    }
+    _sncCometRaf = requestAnimationFrame(_sncCometStep);
+  }
+  function _ensureCometLoop(){
+    if(!_sncCometRaf){
+      _sncCometLast = 0;
+      _sncCometRaf = requestAnimationFrame(_sncCometStep);
+    }
+  }
+
   function paintGen(host, n){
     var body = host.querySelector(".snc-node-body");
     if(!body) return;
-    if(n.status === "queued"){
-      body.innerHTML =
-        '<div class="snc-gen"><div class="snc-gen-wait">' +
-          '<div class="snc-spin"></div>' +
-          '<div class="snc-gen-q"></div>' +
-          '<div class="snc-gen-meta">排队中 · 前面 ' + Math.max(0, (n.queueAhead || 1) - 1) + " 个</div>" +
-        '</div></div>';
-      body.querySelector(".snc-gen-q").textContent = n.prompt || "";
-    } else if(n.status === "waiting"){
+    var isBusy = (n.status === "queued" || n.status === "waiting");
+    host.classList.toggle("is-gen-busy", isBusy);
+    if(isBusy){
+      var isQueued = (n.status === "queued");
       var latentSrc = "";
       var parentId = (n.from && n.from.length) ? n.from[0] : "";
       if(parentId){
@@ -5586,25 +5638,29 @@ var root = document.getElementById("snc");
       var mLabel = (n.modelOpt || "AI").replace(/^[^:]+:/, "");
       var rLabel = n.res ? (n.res >= 4000 ? "4K" : (n.res >= 2000 ? "2K" : (n.res >= 1450 ? "1.5K" : "1K"))) : "2K";
       var gradId = "sncCg_" + String(n.id).replace(/[^a-zA-Z0-9_-]/g, "");
+      var ahead = Math.max(0, (n.queueAhead || 1) - 1);
+      var topBadge = isQueued ? "排队中" : "已提交 · 0.0s";
+      var pillTxt = isQueued ? (ahead > 0 ? ("排队中 · 前方 " + ahead + " 项") : "排队中 · 即将开始") : "模型构图渲染中";
+      var metaTxt = isQueued ? (mLabel + " · " + rLabel + " · 等待空闲槽位") : (mLabel + " · " + rLabel + " · 0.0s");
       body.innerHTML =
-        '<div class="snc-gen is-waiting">' +
+        '<div class="snc-gen ' + (isQueued ? "is-queued" : "is-waiting") + '">' +
           '<svg class="snc-prog-ring" viewBox="0 0 100 100" aria-hidden="true">' +
             '<defs><linearGradient id="' + gradId + '" x1="0%" y1="0%" x2="100%" y2="100%">' +
-              '<stop offset="0%" stop-color="var(--accent)" stop-opacity="1"/>' +
-              '<stop offset="65%" stop-color="var(--accent)" stop-opacity="0.82"/>' +
+              '<stop offset="0%" stop-color="var(--accent-bright, var(--accent))" stop-opacity="1"/>' +
+              '<stop offset="55%" stop-color="var(--accent)" stop-opacity="0.88"/>' +
               '<stop offset="100%" stop-color="var(--accent)" stop-opacity="0.16"/>' +
             '</linearGradient></defs>' +
             '<path class="snc-prog-track" d="M50 1 H89 A10 10 0 0 1 99 11 V89 A10 10 0 0 1 89 99 H11 A10 10 0 0 1 1 89 V11 A10 10 0 0 1 11 1 H50"></path>' +
             '<path class="snc-prog-arc" stroke="url(#' + gradId + ')" d="M50 1 H89 A10 10 0 0 1 99 11 V89 A10 10 0 0 1 89 99 H11 A10 10 0 0 1 1 89 V11 A10 10 0 0 1 11 1 H50"></path>' +
           '</svg>' +
-          '<span class="snc-prog-pct">已提交 · 0.0s</span>' +
+          '<span class="snc-prog-pct">' + topBadge + '</span>' +
           '<div class="snc-gen-wait">' +
             latentHTML +
             '<div class="snc-gen-mesh" aria-hidden="true"></div>' +
-            '<div class="snc-gen-stagepill"><i class="snc-gen-dot"></i><span class="snc-gen-stagetxt">模型构图渲染中</span></div>' +
+            '<div class="snc-gen-stagepill"><i class="snc-gen-dot"></i><span class="snc-gen-stagetxt">' + pillTxt + '</span></div>' +
             '<div class="snc-gen-q"></div>' +
             '<div class="snc-gen-subrow">' +
-              '<span class="snc-gen-meta">' + mLabel + ' · ' + rLabel + ' · 0.0s</span>' +
+              '<span class="snc-gen-meta">' + metaTxt + '</span>' +
               '<button type="button" class="snc-gen-cancel" data-gen-cancel="1">取消</button>' +
             '</div>' +
           '</div>' +
@@ -5615,7 +5671,7 @@ var root = document.getElementById("snc");
         ev.stopPropagation();
         cancelJob(n);
       });
-      setGenProgress(host, n.progress || 0);
+      setGenProgress(host, isQueued ? 8 : (n.progress || 0));
     } else if(n.status === "done"){
       var media = photoHTML(n, n.w, n.h) ||
                   artSVG(n.seed || n.id, Math.round(n.w*2), Math.round(n.h*2), n.variant || 0, n.mood);
@@ -9424,7 +9480,9 @@ var root = document.getElementById("snc");
           var comet = Math.max(52, perim * 0.28);
           if(ring) ring.style.setProperty("--snc-perim", perim.toFixed(2));
           path.style.strokeDasharray = comet.toFixed(2) + " " + Math.max(10, perim - comet).toFixed(2);
-          path.style.strokeDashoffset = "";
+          path.dataset.cometOff = "0";
+          path.style.strokeDashoffset = "0";
+          _ensureCometLoop();
         }
       } else {
         if(ring) ring.classList.remove("is-indet");
