@@ -2818,6 +2818,70 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
   from{ stroke-dashoffset:18; }
   to{ stroke-dashoffset:0; }
 }
+
+/* ============================================================================
+   v3.8.7 · 预览效果 1:1 对齐：画布窗口呼吸灯 + AI 生成卡片排版精修
+   ============================================================================ */
+/* 1. 画布窗口四边呼吸灯（设置 → 外观主题「画布窗口呼吸灯」开关控制 .breath-on） */
+#snc .snc-breath-lamp{
+  position:absolute; inset:0; z-index:4; pointer-events:none;
+  opacity:0; transition:opacity .45s ease;
+}
+#snc .snc-breath-lamp::before{
+  content:""; position:absolute; inset:0;
+  box-shadow:inset 0 0 42px -10px var(--accent-glow);
+}
+#snc.breath-on .snc-breath-lamp{
+  opacity:.72;
+}
+#snc.breath-on .snc-breath-lamp::before{
+  animation:sncWindowBreathIdle 4.2s ease-in-out infinite;
+}
+#snc.breath-on.snc-is-gen .snc-breath-lamp{
+  opacity:1;
+}
+#snc.breath-on.snc-is-gen .snc-breath-lamp::before{
+  animation:sncWindowBreathGen 2.2s ease-in-out infinite;
+}
+@keyframes sncWindowBreathIdle{
+  0%,100%{ box-shadow:inset 0 0 32px -12px var(--accent-glow); }
+  50%{ box-shadow:inset 0 0 58px -6px var(--accent-glow); }
+}
+@keyframes sncWindowBreathGen{
+  0%,100%{ box-shadow:inset 0 0 44px -10px var(--accent-glow); }
+  50%{ box-shadow:inset 0 0 92px -2px var(--accent-glow); }
+}
+
+/* 2. AI 生成中卡片 1:1 对齐预览图：防文字裁切、清晰层级、卡内取消按钮 */
+#snc .snc-gen-wait{
+  gap:10px; padding:34px 18px 16px;
+}
+#snc .snc-gen-q{
+  position:relative; z-index:2;
+  font-size:11.5px; line-height:1.48; color:var(--ink2);
+  -webkit-line-clamp:2; max-height:calc(1.48em * 2);
+}
+#snc .snc-gen-subrow{
+  position:relative; z-index:2;
+  display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;
+  margin-top:2px;
+}
+#snc .snc-gen-subrow .snc-gen-meta{
+  font-family:ui-monospace,"JetBrains Mono",Consolas,monospace;
+  font-size:10.5px; color:var(--muted);
+}
+#snc .snc-gen-cancel{
+  border:1px solid var(--line2); background:var(--raise); color:var(--ink2);
+  font-size:10.5px; line-height:1.2; padding:2px 9px; border-radius:999px;
+  cursor:pointer; transition:border-color .15s, color .15s, background .15s;
+}
+#snc .snc-gen-cancel:hover{
+  border-color:var(--err-fg); color:var(--err-fg); background:var(--err-bg);
+}
+#snc .snc-prog-ring path.snc-prog-arc{
+  stroke-width:2.6;
+  filter:drop-shadow(0 0 7px var(--accent-glow));
+}
 </style>
 </head>
 <body>
@@ -2875,6 +2939,7 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
       <i class="snc-gl-bloom" data-gl="bloom"></i>
       <i class="snc-gl-rim" data-gl="rim"><b class="t"></b><b class="r"></b><b class="b"></b><b class="l"></b></i>
     </div>
+    <div class="snc-breath-lamp" id="sncBreathLamp" aria-hidden="true"></div>
     <div class="snc-world" id="sncWorld">
       <svg class="snc-edges" id="sncEdges" aria-hidden="true"></svg>
     </div>
@@ -3427,6 +3492,15 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
             <button type="button" class="snc-sw" id="sncGlowSw" role="switch"
                     aria-checked="true" aria-label="画布光效"><i></i></button>
           </div>
+
+          <div class="snc-set-row">
+            <div class="snc-set-row-t">
+              <b>画布窗口呼吸灯</b>
+              <span>画布窗口四边呈现柔和的微光呼吸灯效，AI 生成中自动增强呼吸律动。可随时关闭。</span>
+            </div>
+            <button type="button" class="snc-sw" id="sncBreathSw" role="switch"
+                    aria-checked="true" aria-label="画布窗口呼吸灯"><i></i></button>
+          </div>
         </section>
 
         <section class="snc-pane" data-pane="model" hidden>
@@ -3494,7 +3568,7 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
             </span>
             <div class="snc-about-id">
               <b>无限画布</b>
-              <span id="sncAboutVer">v3.8.6 · 静谧微光版 · 本地桥接</span>
+              <span id="sncAboutVer">v3.8.7 · 静谧微光版 · 本地桥接</span>
             </div>
           </div>
           <dl class="snc-about-list">
@@ -4048,6 +4122,23 @@ var root = document.getElementById("snc");
     };
   })();
   glowApi.set(glowOn);
+    /* v3.8.7 · 画布窗口呼吸灯开关（设置 → 外观主题，默认开启，localStorage 持久化） */
+    var BREATH_LS = "snc.breath.v1";
+    var breathOn = true;
+    try{ breathOn = localStorage.getItem(BREATH_LS) !== "0"; }catch(e){}
+    function setBreathLamp(on){
+      breathOn = !!on;
+      if(root) root.classList.toggle("breath-on", breathOn);
+      var bsw = document.getElementById("sncBreathSw");
+      if(bsw) bsw.setAttribute("aria-checked", breathOn ? "true" : "false");
+    }
+    setBreathLamp(breathOn);
+    var bswBtn = document.getElementById("sncBreathSw");
+    if(bswBtn) bswBtn.addEventListener("click", function(){
+      var next = !breathOn;
+      setBreathLamp(next);
+      try{ localStorage.setItem(BREATH_LS, next ? "1" : "0"); }catch(e){}
+    });
   (function(){
     var btn = document.getElementById("sncGlowSw");
     if(!btn) return;
@@ -5480,28 +5571,50 @@ var root = document.getElementById("snc");
       body.querySelector(".snc-gen-q").textContent = n.prompt || "";
     } else if(n.status === "waiting"){
       var latentSrc = "";
-      if(n.fromId){
-        var pNode = byId(n.fromId);
+      var parentId = (n.from && n.from.length) ? n.from[0] : "";
+      if(parentId){
+        var pNode = byId(parentId);
         if(pNode) latentSrc = pNode.cachedThumb || pNode.dataUrl || "";
       }
+      if(!latentSrc && typeof jobOpts === "object" && jobOpts[n.id] && jobOpts[n.id].refs && jobOpts[n.id].refs.length){
+        var r0 = jobOpts[n.id].refs[0];
+        latentSrc = (typeof r0 === "string") ? r0 : (r0 && (r0.dataUrl || r0.url || r0.thumb) || "");
+      }
       var latentHTML = latentSrc
-        ? '<img class="snc-gen-latent" src="' + latentSrc.replace(/"/g, "&quot;") + '" alt="" aria-hidden="true">'
+        ? '<img class="snc-gen-latent" src="' + String(latentSrc).replace(/"/g, "&quot;") + '" alt="" aria-hidden="true">'
         : '';
+      var mLabel = (n.modelOpt || "AI").replace(/^[^:]+:/, "");
+      var rLabel = n.res ? (n.res >= 4000 ? "4K" : (n.res >= 2000 ? "2K" : (n.res >= 1450 ? "1.5K" : "1K"))) : "2K";
+      var gradId = "sncCg_" + String(n.id).replace(/[^a-zA-Z0-9_-]/g, "");
       body.innerHTML =
         '<div class="snc-gen is-waiting">' +
           '<svg class="snc-prog-ring" viewBox="0 0 100 100" aria-hidden="true">' +
+            '<defs><linearGradient id="' + gradId + '" x1="0%" y1="0%" x2="100%" y2="100%">' +
+              '<stop offset="0%" stop-color="var(--accent)" stop-opacity="1"/>' +
+              '<stop offset="65%" stop-color="var(--accent)" stop-opacity="0.82"/>' +
+              '<stop offset="100%" stop-color="var(--accent)" stop-opacity="0.16"/>' +
+            '</linearGradient></defs>' +
             '<path class="snc-prog-track" d="M50 1 H89 A10 10 0 0 1 99 11 V89 A10 10 0 0 1 89 99 H11 A10 10 0 0 1 1 89 V11 A10 10 0 0 1 11 1 H50"></path>' +
-            '<path class="snc-prog-arc" d="M50 1 H89 A10 10 0 0 1 99 11 V89 A10 10 0 0 1 89 99 H11 A10 10 0 0 1 1 89 V11 A10 10 0 0 1 11 1 H50"></path>' +
+            '<path class="snc-prog-arc" stroke="url(#' + gradId + ')" d="M50 1 H89 A10 10 0 0 1 99 11 V89 A10 10 0 0 1 89 99 H11 A10 10 0 0 1 1 89 V11 A10 10 0 0 1 11 1 H50"></path>' +
           '</svg>' +
-          '<span class="snc-prog-pct">0%</span>' +
+          '<span class="snc-prog-pct">已提交 · 0.0s</span>' +
           '<div class="snc-gen-wait">' +
             latentHTML +
             '<div class="snc-gen-mesh" aria-hidden="true"></div>' +
-            '<div class="snc-gen-stagepill"><i class="snc-gen-dot"></i><span class="snc-gen-meta">生成中 · 0.0s</span></div>' +
+            '<div class="snc-gen-stagepill"><i class="snc-gen-dot"></i><span class="snc-gen-stagetxt">模型构图渲染中</span></div>' +
             '<div class="snc-gen-q"></div>' +
+            '<div class="snc-gen-subrow">' +
+              '<span class="snc-gen-meta">' + mLabel + ' · ' + rLabel + ' · 0.0s</span>' +
+              '<button type="button" class="snc-gen-cancel" data-gen-cancel="1">取消</button>' +
+            '</div>' +
           '</div>' +
         '</div>';
       body.querySelector(".snc-gen-q").textContent = n.prompt || "";
+      var cBtn = body.querySelector("[data-gen-cancel]");
+      if(cBtn) cBtn.addEventListener("click", function(ev){
+        ev.stopPropagation();
+        cancelJob(n);
+      });
       setGenProgress(host, n.progress || 0);
     } else if(n.status === "done"){
       var media = photoHTML(n, n.w, n.h) ||
@@ -7727,13 +7840,19 @@ var root = document.getElementById("snc");
     };
     if(spec.signal) init.signal = spec.signal;   // 取消/切画布时能真的把请求掐断
     sncPhase(spec.nodeId, "submitted");
-    return fetch("/api/generate", init).then(function(r){
+    var waitTimer = setTimeout(function(){
       sncPhase(spec.nodeId, "waiting");
+    }, 650);
+    return fetch("/api/generate", init).then(function(r){
+      clearTimeout(waitTimer);
       return r.json().then(function(j){
         if(!r.ok || !j.ok) throw new Error(j.error || ("HTTP " + r.status));
         sncPhase(spec.nodeId, "received");
         return j;
       });
+    }, function(err){
+      clearTimeout(waitTimer);
+      throw err;
     });
   }
 
@@ -9266,13 +9385,26 @@ var root = document.getElementById("snc");
     var PHASE = {
       queued:    {pct:0,   text:"排队中"},
       prepared:  {pct:15,  text:"参考图已就绪"},
-      submitted: {pct:20,  text:"已提交 · 等待模型"},
-      waiting:   {pct:-1,  text:"生成中 · 等待模型响应"},
-      received:  {pct:95,  text:"已收到 · 正在落图"},
+      submitted: {pct:20,  text:"已提交至模型"},
+      waiting:   {pct:-1,  text:"模型构图渲染中"},
+      received:  {pct:95,  text:"已收到 · 正在显影"},
       done:      {pct:100, text:"完成"}
     };
     var phase = "queued";
+    var mTag = ((opts && opts.model) || n.modelOpt || "AI").replace(/^[^:]+:/, "");
+    var rVal = (opts && opts.res) || n.res || 2048;
+    var rTag = rVal >= 4000 ? "4K" : (rVal >= 2000 ? "2K" : (rVal >= 1450 ? "1.5K" : "1K"));
     function elapsed(){ return ((Date.now() - t0) / 1000).toFixed(1) + "s"; }
+    function syncTimeUI(h){
+      var t = elapsed();
+      var badge = h.querySelector(".snc-prog-pct");
+      if(badge){
+        badge.hidden = false;
+        badge.textContent = (phase === "waiting" ? "渲染中 · " : (phase === "submitted" ? "已提交 · " : (PHASE[phase].pct + "% · "))) + t;
+      }
+      var meta = h.querySelector(".snc-gen-meta");
+      if(meta) meta.textContent = mTag + " · " + rTag + " · " + t;
+    }
     function setPhase(p){
       if(!PHASE[p]) return;
       phase = p;
@@ -9281,39 +9413,35 @@ var root = document.getElementById("snc");
       if(!h) return;
       var ring = h.querySelector(".snc-prog-ring");
       var path = ring && (ring.querySelector("path.snc-prog-arc") || ring.querySelector("path"));
-      var badge = h.querySelector(".snc-prog-pct");
+      var stTxt = h.querySelector(".snc-gen-stagetxt");
+      if(stTxt) stTxt.textContent = cfg.text;
       if(p === "waiting"){
-        /* v3.8.6 · 方案二彗星流光环：按真实周长取 28% 光束顺时针丝滑绕行，取代生硬的 18 14 虚线块 */
+        /* v3.8.7 · 彗星流光环绕：按真实周长取 28% 渐变光束顺时针丝滑绕行 */
         setGenProgress(h, 0);
         if(ring) ring.classList.add("is-indet");
         if(path){
           var perim = parseFloat(path.dataset.perimeter) || 600;
-          var comet = Math.max(48, perim * 0.28);
+          var comet = Math.max(52, perim * 0.28);
           if(ring) ring.style.setProperty("--snc-perim", perim.toFixed(2));
           path.style.strokeDasharray = comet.toFixed(2) + " " + Math.max(10, perim - comet).toFixed(2);
           path.style.strokeDashoffset = "";
         }
-        if(badge) badge.hidden = true;
       } else {
         if(ring) ring.classList.remove("is-indet");
         if(path) path.style.strokeDasharray = "";
-        if(badge) badge.hidden = false;
         n.progress = cfg.pct;
         setGenProgress(h, cfg.pct);
       }
-      var meta = h.querySelector(".snc-gen-meta");
-      if(meta) meta.textContent = cfg.text + " · " + elapsed();
+      syncTimeUI(h);
     }
     window.SNC_PHASE[n.id] = setPhase;
     setPhase("queued");
-    /* 等待期间只刷「已用时」，不推进百分比 */
     var tick = setInterval(function(){
       if(phase !== "waiting" && phase !== "submitted") return;
       var h = world.querySelector('[data-id="' + n.id + '"]');
       if(!h) return;
-      var meta = h.querySelector(".snc-gen-meta");
-      if(meta) meta.textContent = PHASE[phase].text + " · " + elapsed();
-    }, 200);
+      syncTimeUI(h);
+    }, 150);
     if(n._job) n._job.tick = tick;      // 取消时要能把定时器一起收掉
 
     function finish(res){
