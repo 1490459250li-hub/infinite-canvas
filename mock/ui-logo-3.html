@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>无限画布 · 新 logo 三方案</title>
+<style>
+  *{box-sizing:border-box; margin:0; padding:0;}
+  :root{
+    --bg:#08080a; --fg:#e9e7e2; --fg2:#a9a6a0; --fg3:#6f6c66;
+    --line:#1e1e26; --panel:#0e0e12;
+    /* 能量四色（antigravity 同款语言） */
+    --g1:#3d7bf5; --g2:#3fb4d6; --g3:#3cbb86; --g4:#c9924a; --g5:#ff5a4d;
+    --tile:#0d0d10; --tile-line:#202028;
+    --fa1:.20; --fa2:.42;
+  }
+  body[data-p="orange"]{ --g1:#b8481f; --g2:#d35a2b; --g3:#e9743f; --g4:#ffa06a; --g5:#ffb98f; }
+  body[data-p="blue"]{ --g1:#2643c4; --g2:#3d5ff0; --g3:#6b87ff; --g4:#9db2ff; --g5:#cfdbff; }
+  body[data-bg="light"]{
+    --bg:#f4f2ee; --fg:#141418; --fg2:#4a4a52; --fg3:#8a8a94;
+    --line:#e2ded6; --panel:#fbfaf8; --tile:#ffffff; --tile-line:#e6e2da;
+    --fa1:.34; --fa2:.58;
+  }
+
+  html{height:100%;}
+  body{
+    background:var(--bg); color:var(--fg); padding:24px 28px 40px;
+    font-family:ui-sans-serif,system-ui,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased; transition:background .2s, color .2s;
+  }
+
+  header{display:flex; align-items:flex-end; gap:18px; flex-wrap:wrap; margin-bottom:26px;}
+  .ht{display:flex; flex-direction:column; gap:5px;}
+  .ht b{font-size:15px; font-weight:600; letter-spacing:-.005em;}
+  .ht span{font-size:11.5px; color:var(--fg3); line-height:1.55;}
+  .sp{flex:1;}
+  .ctrl{display:flex; flex-direction:column; gap:6px;}
+  .ctrl>span{font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--fg3);}
+  .seg{display:flex; gap:2px; background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:2px;}
+  .seg button{
+    border:0; background:transparent; color:var(--fg3); cursor:pointer; font:inherit; font-size:11.5px;
+    padding:5px 10px; border-radius:7px; white-space:nowrap; transition:.14s;
+  }
+  .seg button:hover{color:var(--fg2);}
+  .seg button.on{background:var(--fg); color:var(--bg);}
+
+  .deck{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; align-items:start;}
+  .col{display:flex; flex-direction:column; gap:14px;}
+
+  .stage{
+    position:relative; border-radius:16px; padding:26px 20px 22px;
+    background:var(--tile); border:1px solid var(--tile-line);
+    display:flex; flex-direction:column; align-items:center; gap:20px;
+  }
+  .big{width:196px; height:196px; display:block;}
+  .big svg{width:100%; height:100%; display:block;}
+
+  .scales{display:flex; align-items:flex-end; gap:20px; padding-top:4px;}
+  .scales .s{display:flex; flex-direction:column; align-items:center; gap:7px;}
+  .scales .s svg{display:block;}
+  .scales .s i{font-size:9px; font-style:normal; color:var(--fg3); letter-spacing:.04em;}
+
+  .hd{display:flex; align-items:baseline; gap:9px;}
+  .hd b{font-size:13.5px; font-weight:600;}
+  .hd span{font-size:10px; color:var(--fg3); letter-spacing:.06em; text-transform:uppercase;}
+  .lead{font-size:11.5px; line-height:1.72; color:var(--fg2);}
+  .kv{display:flex; flex-direction:column;}
+  .kv div{display:flex; justify-content:space-between; gap:8px; padding:5.5px 0; border-top:1px solid var(--line); font-size:10.5px;}
+  .kv div:first-child{border-top:0;}
+  .kv i{font-style:normal; color:var(--fg3);}
+  .kv em{font-style:normal; color:var(--fg2); font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; font-size:10px;}
+  .anim{
+    font-size:10.5px; line-height:1.66; color:var(--fg3);
+    border-left:2px solid var(--g1); padding:2px 0 2px 10px;
+  }
+  .anim b{color:var(--fg2); font-weight:500;}
+
+  .l2-f1{opacity:var(--fa1);} .l2-f2{opacity:var(--fa2);}
+  .foot{margin-top:26px; padding-top:18px; border-top:1px solid var(--line);
+    display:flex; align-items:center; gap:26px; flex-wrap:wrap;}
+  .foot .lbl{font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--fg3);}
+  .ruler{display:flex; align-items:flex-end; gap:22px;}
+  .runit{display:flex; flex-direction:column; align-items:center; gap:8px;}
+  .rrow{display:flex; align-items:center; justify-content:center; gap:13px; height:32px; width:104px;}
+  .runit i{font-size:9px; font-style:normal; letter-spacing:.1em; color:var(--fg3);}
+
+  @media (max-width:1120px){ .deck{grid-template-columns:1fr;} }
+</style>
+</head>
+<body data-p="energy" data-bg="dark">
+
+<header>
+  <div class="ht">
+    <b>无限画布 · 新标识三方案</b>
+    <span>视觉语言取自 antigravity：双弧结构 + 上升托举 + 四色能量渐变；落地语义取自「无限」与「画布」</span>
+  </div>
+  <div class="sp"></div>
+  <div class="ctrl">
+    <span>配色</span>
+    <div class="seg" id="pseg">
+      <button data-p="energy" class="on">四色能量</button>
+      <button data-p="orange">单色橙</button>
+      <button data-p="blue">单色蓝</button>
+    </div>
+  </div>
+  <div class="ctrl">
+    <span>底色</span>
+    <div class="seg" id="bseg">
+      <button data-bg="dark" class="on">暗色</button>
+      <button data-bg="light">亮色</button>
+    </div>
+  </div>
+</header>
+
+<div class="deck" id="deck"></div>
+
+<div class="foot">
+  <span class="lbl">实际使用尺寸</span>
+  <div class="ruler" id="ruler"></div>
+</div>
+
+<script>
+/* ============================================================
+   几何
+   ============================================================ */
+const V = 512;                       // viewBox
+const C = V / 2;
+
+/* 双纽线（∞）：t∈[0,2π) */
+function lemn(t, a, ys){
+  const s = Math.sin(t), c = Math.cos(t), den = 1 + s * s;
+  return [ C + a * c / den, C + a * s * c / den * ys ];
+}
+function arcPath(t0, t1, a, ys, steps = 140){
+  let d = '';
+  for (let i = 0; i <= steps; i++){
+    const t = t0 + (t1 - t0) * i / steps;
+    const [x, y] = lemn(t, a, ys);
+    d += (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
+  }
+  return d;
+}
+
+/* 椭圆弧：θ 增大方向在屏幕上顺时针（SVG y 向下） */
+function ellArc(cx, cy, rx, ry, t0, t1, steps = 120){
+  let d = '';
+  for (let i = 0; i <= steps; i++){
+    const t = t0 + (t1 - t0) * i / steps;
+    d += (i ? 'L' : 'M') + (cx + rx * Math.cos(t)).toFixed(1) + ' '
+       + (cy + ry * Math.sin(t)).toFixed(1);
+  }
+  return d;
+}
+
+/* ---------- L1 · 悬浮双弧 ---------- */
+function l1(){
+  const a = 152, ys = 1.26;
+  // 右叶：t∈(-α, α) 从中心下侧鼓出再收回；左叶同理 —— 这才是「两个环」
+  const al = 1.34;
+  const right = arcPath(-al, al, a, ys);
+  const left  = arcPath(Math.PI - al, Math.PI + al, a, ys);
+  return `
+  <g transform="rotate(-8 256 256)" fill="none" stroke-linecap="round" stroke-width="41">
+    <defs>
+      <linearGradient id="g1a" x1="98" y1="0" x2="262" y2="0" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="var(--g4)"/>
+        <stop offset=".42" stop-color="var(--g3)"/>
+        <stop offset="1" stop-color="var(--g2)"/>
+      </linearGradient>
+      <linearGradient id="g1b" x1="250" y1="0" x2="414" y2="0" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="var(--g2)"/>
+        <stop offset=".52" stop-color="var(--g3)"/>
+        <stop offset="1" stop-color="var(--g1)"/>
+      </linearGradient>
+    </defs>
+    <path d="${right}" stroke="url(#g1b)"/>
+    <path d="${left}" stroke="url(#g1a)" opacity=".82"/>
+  </g>`;
+}
+
+/* ---------- L2 · 悬浮叠层（现有卡片 logo 的进化） ---------- */
+function l2(){
+  return `
+  <defs>
+    <linearGradient id="g2a" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="var(--g1)"/>
+      <stop offset=".45" stop-color="var(--g2)"/>
+      <stop offset=".75" stop-color="var(--g3)"/>
+      <stop offset="1" stop-color="var(--g4)"/>
+    </linearGradient>
+    <linearGradient id="g2b" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="var(--g4)"/>
+      <stop offset=".5" stop-color="var(--g5)"/>
+      <stop offset="1" stop-color="var(--g1)"/>
+    </linearGradient>
+    <linearGradient id="g2c" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="var(--g5)"/>
+      <stop offset=".55" stop-color="var(--g4)"/>
+      <stop offset="1" stop-color="var(--g2)"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 底层：最远、最淡 -->
+  <rect class="l2-f1" x="92" y="188" width="300" height="300" rx="92"
+        fill="none" stroke="var(--g1)" stroke-width="11"/>
+  <!-- 中层 -->
+  <rect class="l2-f2" x="112" y="152" width="288" height="288" rx="88"
+        fill="none" stroke="var(--g2)" stroke-width="13"/>
+  <!-- 顶层：实心，向上托起 -->
+  <rect x="136" y="108" width="240" height="240" rx="74" fill="url(#g2a)"/>
+  <!-- 面上的折线：保留「看图 / 趋势」的识别 -->
+  <path d="M186 268 L226 222 L262 258 L322 178"
+        fill="none" stroke="#0b0b0d" stroke-width="17"
+        stroke-linecap="round" stroke-linejoin="round" opacity=".86"/>
+  <circle cx="186" cy="268" r="11" fill="#0b0b0d" opacity=".88"/>`;
+}
+
+/* ---------- L3 · 轨道核 ---------- */
+function l3(){
+  const cx = 256, cy = 256, rx = 214, ry = 118;
+  // 前半（屏幕下方）压在方块上；后半（屏幕上方）被方块挡住
+  const front = ellArc(cx, cy, rx, ry, 0, Math.PI);
+  return `
+  <defs>
+    <linearGradient id="g3a" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="var(--g1)"/>
+      <stop offset=".42" stop-color="var(--g2)"/>
+      <stop offset=".76" stop-color="var(--g3)"/>
+      <stop offset="1" stop-color="var(--g4)"/>
+    </linearGradient>
+    <linearGradient id="g3b" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="var(--g4)"/>
+      <stop offset=".48" stop-color="var(--g2)"/>
+      <stop offset="1" stop-color="var(--g1)"/>
+    </linearGradient>
+    <linearGradient id="g3c" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="var(--g3)"/>
+      <stop offset="1" stop-color="var(--g2)"/>
+    </linearGradient>
+    <linearGradient id="g3gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".22"/>
+      <stop offset=".42" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="rotate(-16 256 256)" fill="none" stroke-linecap="round">
+    <!-- 完整轨道：亮度统一，靠画布遮挡来区分前后 -->
+    <ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}"
+             stroke="url(#g3b)" stroke-width="11"/>
+
+    <!-- 画布本体：微微倾斜，像浮在空中 -->
+    <g transform="rotate(3 256 256)">
+      <rect x="143" y="143" width="226" height="226" rx="66" fill="url(#g3a)"/>
+      <rect x="143" y="143" width="226" height="226" rx="66"
+            fill="url(#g3gloss)"/>
+      <rect x="143" y="143" width="226" height="226" rx="66"
+            fill="none" stroke="#ffffff" stroke-width="1.6" opacity=".22"/>
+    </g>
+
+    <!-- 前方段：补回被画布挡掉的下半，形成真正的"绕过去" -->
+    <path d="${front}" stroke="url(#g3b)" stroke-width="12.5"/>
+
+    <!-- 轨道右端的光点：能量注入点 -->
+    <circle cx="${cx + rx}" cy="${cy}" r="11" fill="var(--g5)"/>
+    <circle cx="${cx + rx}" cy="${cy}" r="25" fill="var(--g5)" opacity=".15"/>
+  </g>`;
+}
+
+const LOGOS = {
+  l1: {
+    name: '悬浮双弧', tag: '∞ · 双曲线',
+    lead: '两个环各自从中心向外鼓出，在中央只差一道细缝、并不真正接触——这正是 antigravity「脱地、悬浮」的手势。形状本身是「无限」，也是最容易被记住的一个。',
+    kv: [['结构','两个独立环 · 圆头'],['笔画','41 / 512'],['中央缺口','各 26°'],['渐变','金 → 青 → 蓝'],['16 px','两环可辨']],
+    anim: '最适合点阵化：沿弧长采样即可得到两条「点链」，可做沿轨迹流动的光点。'
+  },
+  l2: {
+    name: '悬浮叠层', tag: '画布 · 三层',
+    lead: '沿用你现在这只 logo 的三层卡片语义，但把层与层真正拉开、用渐变描边、最上层实心并向上托起。是进化而不是推翻，老用户仍认得出来。',
+    kv: [['结构','三层圆角方 · 逐层上浮'],['圆角','74 / 88 / 92'],['间距','36 px 斜向'],['描边','11 / 13'],['16 px','一般']],
+    anim: '天然适合分波聚形：三层卡片可依次落位，正是之前 P3「双层合拢」的升级版。'
+  },
+  l3: {
+    name: '轨道核', tag: '画布 · 轨道',
+    lead: '一块倾斜的画布，被一条轨道环住，轨道从画布后方穿过去、再从前方绕回来，右端一颗光点是能量注入点。语义最完整：画布是核心，无限是它的轨道。',
+    kv: [['结构','渐变方块 + 椭圆轨道'],['倾斜','-13° 面 / -16° 环'],['轨道','214 × 118'],['光点','11 px + 外晕'],['16 px','较弱']],
+    anim: '动画空间最大：轨道可绕行、光点可运行、画布可轻微浮动，但比前两者更「忙」。'
+  }
+};
+const ORDER = ['l1', 'l2', 'l3'];
+const SVG = { l1, l2, l3 };
+
+/* ============================================================
+   渲染
+   ============================================================ */
+function full(k, size){
+  return `<svg viewBox="0 0 512 512" width="${size}" height="${size}" aria-label="${LOGOS[k].name}">${SVG[k]()}</svg>`;
+}
+
+const deck = document.getElementById('deck');
+ORDER.forEach(k => {
+  const m = LOGOS[k];
+  const col = document.createElement('section');
+  col.className = 'col';
+  col.innerHTML = `
+    <div class="stage">
+      <div class="big">${full(k, 196)}</div>
+      <div class="scales">
+        ${[48, 32, 24, 16].map(s => `<div class="s">${full(k, s)}<i>${s}</i></div>`).join('')}
+      </div>
+    </div>
+    <div>
+      <div class="hd"><b>${m.name}</b><span>${k.toUpperCase()} · ${m.tag}</span></div>
+      <p class="lead" style="margin-top:8px">${m.lead}</p>
+      <div class="kv" style="margin-top:12px">
+        ${m.kv.map(([a, b]) => `<div><i>${a}</i><em>${b}</em></div>`).join('')}
+      </div>
+      <div class="anim" style="margin-top:13px"><b>做动画：</b>${m.anim}</div>
+    </div>`;
+  deck.appendChild(col);
+});
+
+/* 底部：三套并排的真实尺寸（16 / 24 / 32） */
+const ruler = document.getElementById('ruler');
+ORDER.forEach(k => {
+  const d = document.createElement('div');
+  d.className = 'runit';
+  d.innerHTML = `<div class="rrow">${[16, 24, 32].map(s => full(k, s)).join('')}</div>
+    <i>${k.toUpperCase()}</i>`;
+  ruler.appendChild(d);
+});
+
+/* 配色 / 底色 */
+document.querySelectorAll('#pseg button').forEach(b => {
+  b.onclick = () => {
+    document.body.dataset.p = b.dataset.p;
+    document.querySelectorAll('#pseg button').forEach(x => x.classList.toggle('on', x === b));
+  };
+});
+document.querySelectorAll('#bseg button').forEach(b => {
+  b.onclick = () => {
+    document.body.dataset.bg = b.dataset.bg;
+    document.querySelectorAll('#bseg button').forEach(x => x.classList.toggle('on', x === b));
+  };
+});
+</script>
+</body>
+</html>

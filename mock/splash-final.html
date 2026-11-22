@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>启动动画 · 点阵聚形（按提供素材复刻）</title>
+<style>
+  :root{
+    --bg:#07070a; --panel:#0e0e12; --line:#1e1e26; --line2:#2a2a34;
+    --ink:#eceef4; --ink2:#a8adbc; --ink3:#71767f; --faint:#565a63;
+    --accent:#4d6bfe;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0; min-height:100%;}
+  body{
+    background:
+      radial-gradient(900px 500px at 50% -10%, #101018, transparent 70%),
+      var(--bg);
+    color:var(--ink);
+    font-family:ui-sans-serif,system-ui,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .bar{
+    display:flex; align-items:center; justify-content:space-between; gap:18px;
+    padding:16px 22px; border-bottom:1px solid var(--line);
+  }
+  .bar-l b{display:block; font-size:13px; font-weight:600; letter-spacing:.01em;}
+  .bar-l span{display:block; margin-top:3px; font-size:11px; color:var(--faint);}
+  .bar-r{display:flex; align-items:center; gap:8px;}
+  .seg{display:flex; align-items:center; gap:2px; padding:2px; border-radius:8px;
+    background:#131318; border:1px solid var(--line);}
+  .seg-lb{font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint);
+    padding:0 8px 0 6px;}
+  .seg button{
+    appearance:none; border:0; background:transparent; color:var(--ink3); cursor:pointer;
+    font:inherit; font-size:11px; padding:6px 11px; border-radius:6px; white-space:nowrap;
+  }
+  .seg button:hover{color:var(--ink); background:#1b1b22;}
+  .seg button.on{background:#232331; color:#fff;}
+
+  main{display:flex; gap:22px; padding:22px; align-items:flex-start; max-width:1500px; margin:0 auto;}
+  .left{flex:1; min-width:0; display:flex; flex-direction:column; gap:14px;}
+
+  .screen{
+    position:relative; width:100%; max-width:1120px; aspect-ratio:16/9;
+    border-radius:12px; overflow:hidden; background:#000;
+    box-shadow:0 0 0 1px #1c1c24, 0 30px 70px -40px #000;
+  }
+  .screen canvas{display:block; width:100%; height:100%;}
+  .screen::after{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.045);
+    border-radius:12px;
+  }
+
+  .ctrl{
+    display:flex; align-items:center; gap:12px; padding:10px 12px;
+    border:1px solid var(--line); border-radius:10px; background:#0d0d11;
+  }
+  .btn{
+    appearance:none; border:1px solid var(--line2); background:#16161c; color:var(--ink2);
+    width:30px; height:30px; border-radius:7px; cursor:pointer; display:grid; place-items:center;
+    flex:none;
+  }
+  .btn:hover{color:#fff; border-color:#3a3a46;}
+  .btn svg{width:13px; height:13px; fill:currentColor;}
+  .scrub{flex:1; display:flex; flex-direction:column; gap:6px;}
+  .scrub input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:3px; border-radius:2px;
+    background:#26262f; outline:none; cursor:pointer;
+  }
+  .scrub input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:11px; height:11px; border-radius:50%;
+    background:#e8eaf0; border:0; box-shadow:0 0 0 3px rgba(120,140,255,.18);
+  }
+  .tline{display:flex; justify-content:space-between; font-size:10px; color:var(--faint);
+    font-variant-numeric:tabular-nums;}
+  .chk{display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink3); cursor:pointer;
+    user-select:none; white-space:nowrap;}
+  .chk input{accent-color:var(--accent); width:13px; height:13px;}
+  .marks{display:flex; gap:7px; flex-wrap:wrap;}
+  .mark{flex:1; min-width:0; border:1px solid var(--line); border-radius:7px; overflow:hidden;
+    background:#0a0a0d; cursor:pointer; padding:0; position:relative;}
+  .mark canvas{display:block; width:100%; height:auto;}
+  .mark span{position:absolute; left:5px; bottom:4px; font-size:8.5px; color:#8b90a0;
+    background:rgba(0,0,0,.5); padding:1px 4px; border-radius:3px; letter-spacing:.04em;}
+  .mark.on{border-color:#4a5aa8;}
+
+  aside{
+    width:290px; flex:none; display:flex; flex-direction:column; gap:14px;
+  }
+  .card{border:1px solid var(--line); border-radius:10px; padding:14px 15px; background:#0d0d11;}
+  .card h3{margin:0 0 10px; font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--faint); font-weight:500;}
+  .card p{margin:0; font-size:12px; line-height:1.62; color:var(--ink3);}
+  .card p + p{margin-top:8px;}
+  .kv{display:flex; flex-direction:column; gap:7px;}
+  .kv div{display:flex; justify-content:space-between; gap:10px; font-size:11.5px;}
+  .kv i{font-style:normal; color:var(--faint);}
+  .kv em{font-style:normal; color:var(--ink2); font-variant-numeric:tabular-nums;}
+  .stage-list{display:flex; flex-direction:column; gap:9px; margin-top:2px;}
+  .stage-list div{display:flex; gap:9px; align-items:baseline; font-size:11.5px; color:var(--ink3);}
+  .stage-list b{font-weight:600; color:var(--ink2); font-variant-numeric:tabular-nums;
+    width:44px; flex:none; font-size:10.5px;}
+  .note{border-left:2px solid #2c3b7a; padding-left:10px; font-size:11.5px; color:var(--faint);
+    line-height:1.6;}
+  .logo-strip{display:flex; align-items:center; gap:12px; padding:10px 0 2px;}
+  .logo-strip svg{display:block;}
+
+  @media (max-width:1080px){
+    main{flex-direction:column;}
+    aside{width:100%; flex-direction:row; flex-wrap:wrap;}
+    aside .card{flex:1 1 240px;}
+  }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="lgMark" x1="4" y1="0" x2="60" y2="0" gradientUnits="userSpaceOnUse">
+    <stop offset="0"    stop-color="#5c7bfd"/>
+    <stop offset=".14"  stop-color="#4589f8"/>
+    <stop offset=".28"  stop-color="#36aef0"/>
+    <stop offset=".42"  stop-color="#45c6b4"/>
+    <stop offset=".52"  stop-color="#6fd683"/>
+    <stop offset=".62"  stop-color="#c3d958"/>
+    <stop offset=".70"  stop-color="#f5d94e"/>
+    <stop offset=".80"  stop-color="#ffbb42"/>
+    <stop offset=".90"  stop-color="#fe9145"/>
+    <stop offset="1"    stop-color="#fe6a68"/>
+  </linearGradient>
+</defs></svg>
+
+<header class="bar">
+  <div class="bar-l">
+    <b>启动动画 · 点阵聚形</b>
+    <span>按提供的 logo 与动画素材复刻 · 640×360 · 3.6 s · 可拖动时间轴逐帧看</span>
+  </div>
+  <div class="bar-r">
+    <div class="seg" id="sizeSeg">
+      <span class="seg-lb">显示</span>
+      <button data-z="1" class="on">1×</button>
+      <button data-z="0.5">缩略</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="left">
+    <div class="screen" id="screen"><canvas id="cv"></canvas></div>
+
+    <div class="ctrl">
+      <button class="btn" id="playBtn" title="播放 / 暂停">
+        <svg viewBox="0 0 16 16" id="playIcon"><path d="M4 2.5l9 5.5-9 5.5z"/></svg>
+      </button>
+      <button class="btn" id="replayBtn" title="重播">
+        <svg viewBox="0 0 16 16"><path d="M8 2.6a5.4 5.4 0 11-5.1 3.6l1.5.7A3.8 3.8 0 108 4.2V6L4.6 3.4 8 1z"/></svg>
+      </button>
+      <div class="scrub">
+        <input type="range" id="scrub" min="0" max="3600" value="0" step="10">
+        <div class="tline"><span id="tNow">0.00 s</span><span>3.60 s</span></div>
+      </div>
+      <label class="chk"><input type="checkbox" id="loopChk" checked>循环</label>
+    </div>
+
+    <div class="marks" id="marks"></div>
+  </div>
+
+  <aside>
+    <div class="card">
+      <h3>四个阶段</h3>
+      <div class="stage-list">
+        <div><b>0.0–0.2</b><span>星野浮现，中心一点极弱的光核</span></div>
+        <div><b>0.2–1.2</b><span>粒子沿 ∞ 从右环点燃，贴轨迹滑入</span></div>
+        <div><b>1.0–1.6</b><span>粒子并入色带，梳齿纹理长出，光核脉冲</span></div>
+        <div><b>1.7–2.1</b><span>色带收缩到标识尺寸（梳齿自动褪掉）</span></div>
+        <div><b>2.1–2.7</b><span>文字逐字浮出，字距由松收正</span></div>
+        <div><b>2.7–3.6</b><span>定格，星野缓漂，标识轻微呼吸</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>标识规格（实测自 logo.png）</h3>
+      <div class="logo-strip">
+        <svg width="96" height="96" viewBox="0 0 64 64"><path id="markPathA" fill="none" stroke="url(#lgMark)" stroke-width="4.3" stroke-linejoin="round" stroke-linecap="round"/></svg>
+        <svg width="40" height="40" viewBox="0 0 64 64"><path id="markPathB" fill="none" stroke="url(#lgMark)" stroke-width="4.3" stroke-linejoin="round" stroke-linecap="round"/></svg>
+        <svg width="22" height="22" viewBox="0 0 64 64"><path id="markPathC" fill="none" stroke="url(#lgMark)" stroke-width="4.3" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      </div>
+      <div class="kv" style="margin-top:10px">
+        <div><i>比例</i><em>2.64 : 1</em></div>
+        <div><i>笔画 / 宽</i><em>7.1 %</em></div>
+        <div><i>渐变</i><em>蓝紫 → 青 → 绿 → 金 → 珊瑚</em></div>
+        <div><i>窗口</i><em>640 × 360（16:9）</em></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>和素材的差异</h3>
+      <p>提供的是 2560×1440、3.43 s 的成片，这里按同样的四段节奏重做成<strong>可实时渲染的版本</strong>：分辨率降到启动窗尺寸，粒子数、梳齿密度按屏幕像素重算，收尾改成 640 宽下的居中锁定排版。</p>
+      <p class="note">成片里标识最后停在左下；启动窗太小，左对齐会让右侧空得发慌，所以改成水平居中。</p>
+    </div>
+  </aside>
+</main>
+
+<script>
+/* ============================================================
+   几何：双纽线（与 logo.png 实测一致）
+   x = a·cos t / (1+sin²t)
+   y = a·sin t·cos t / (1+sin²t)·ys
+   ============================================================ */
+const W = 640, H = 360;
+const CX = 320, CY = 150;          // 大形态中心
+const A = 172;                      // 横向半径
+const YS = 0.94;                    // 纵向比例（实测 2.64:1）
+const BW = 27;                      // 笔画宽度
+const MARK_W = 128;                 // 收尾标识宽度
+const TITLE_FS = 32;                // 中文标题字号
+const GAP = 18;                     // 标识与文字间距
+const S_MARK = MARK_W / (2 * A + BW);
+const TITLE_W = 128;                // 4 字 × 32px（近似）
+const LOCK_X = (W - (MARK_W + GAP + TITLE_W)) / 2;   // 锁定排版左边距
+const MARK_CX = LOCK_X + MARK_W / 2;
+const MARK_CY = CY - 6;
+
+const RAMP = [
+  [0.00, 0x5c, 0x7b, 0xfd],
+  [0.14, 0x45, 0x89, 0xf8],
+  [0.28, 0x36, 0xae, 0xf0],
+  [0.42, 0x45, 0xc6, 0xb4],
+  [0.52, 0x6f, 0xd6, 0x83],
+  [0.62, 0xc3, 0xd9, 0x58],
+  [0.70, 0xf5, 0xd9, 0x4e],
+  [0.80, 0xff, 0xbb, 0x42],
+  [0.90, 0xfe, 0x91, 0x45],
+  [1.00, 0xfe, 0x6a, 0x68],
+];
+
+function rampAt(t){
+  t = Math.max(0, Math.min(1, t));
+  for (let i = 1; i < RAMP.length; i++){
+    if (t <= RAMP[i][0]){
+      const a = RAMP[i-1], b = RAMP[i];
+      const k = (t - a[0]) / (b[0] - a[0] || 1);
+      return [
+        Math.round(a[1] + (b[1]-a[1])*k),
+        Math.round(a[2] + (b[2]-a[2])*k),
+        Math.round(a[3] + (b[3]-a[3])*k),
+      ];
+    }
+  }
+  const z = RAMP[RAMP.length-1];
+  return [z[1], z[2], z[3]];
+}
+const normX = x => (x + A) / (2 * A);
+
+function lem(u, a){
+  const s = Math.sin(u), c = Math.cos(u), d = 1 + s*s;
+  return [a * c / d, a * s * c / d * YS];
+}
+
+/* 带法向的采样点 */
+function sampleBand(a, n){
+  const pts = [];
+  for (let i = 0; i <= n; i++){
+    const u = i / n * Math.PI * 2;
+    const [x, y] = lem(u, a);
+    const [x2, y2] = lem(u + 0.002, a);
+    let nx = -(y2 - y), ny = (x2 - x);
+    const l = Math.hypot(nx, ny) || 1;
+    pts.push({u, x, y, nx: nx/l, ny: ny/l});
+  }
+  return pts;
+}
+
+/* SVG 路径字符串（同一套参数） */
+(function fillMarkPaths(){
+  const pts = sampleBand(27.9, 200);
+  let d = 'M';
+  pts.forEach((p, i) => {
+    const X = (32 + p.x).toFixed(2), Y = (32 + p.y).toFixed(2);
+    d += (i ? 'L' : '') + X + ' ' + Y;
+  });
+  ['markPathA','markPathB','markPathC'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute('d', d);
+  });
+  window.__MARK_D = d;
+})();
+
+/* ============================================================
+   随机（确定性）
+   ============================================================ */
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ============================================================
+   粒子：位置完全由时间决定（可逐帧拖动）
+   ============================================================ */
+const PCOUNT = 1150;
+const PARTS = [];
+(function buildParticles(){
+  const rnd = mulberry32(20261121);
+  for (let i = 0; i < PCOUNT; i++){
+    const u = rnd() * Math.PI * 2;
+    const [x, y] = lem(u, A);
+    const [x2, y2] = lem(u + 0.002, A);
+    const dx = x2 - x, dy = y2 - y;
+    const tl = Math.hypot(dx, dy) || 1;
+    const tx = dx / tl, ty = dy / tl;
+    let nx = -dy, ny = dx;
+    const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+
+    // 偏向两侧边缘，形成描边聚点
+    const side = rnd() < .5 ? -1 : 1;
+    const off = side * (BW * .5) * Math.pow(rnd(), .42);
+
+    // 点燃顺序：从右环（u=0）向两侧推进到左环（u=π）
+    const w = (1 - Math.cos(u)) / 2;
+
+    PARTS.push({
+      u,
+      tx: CX + x + nx * off,
+      ty: CY + y + ny * off,
+      nx, ny, tx, ty,
+      r: 0.42 + Math.pow(rnd(), 2.6) * 1.25,
+      seed: rnd(),
+      t0: 0.20 + 0.60 * w + 0.10 * rnd(),
+      dur: 0.42 + 0.22 * rnd(),
+      // 起点：沿路径「后方」一段，带轻微法向偏移 —— 像顺着轨迹被吸进来
+      d0: 6 + 20 * rnd(),
+      jx: (rnd() * 2 - 1) * 5,
+      jy: (rnd() * 2 - 1) * 6,
+      ph: rnd() * 6.28,
+    });
+  }
+})();
+
+/* 星野 */
+const STARS = [];
+(function buildStars(){
+  const rnd = mulberry32(77123);
+  for (let i = 0; i < 190; i++){
+    const big = rnd() > .945;
+    STARS.push({
+      x: rnd() * W, y: rnd() * H,
+      r: big ? 0.9 + rnd() * 1.0 : 0.35 + rnd() * 0.75,
+      a: 0.16 + rnd() * 0.55,
+      tw: 0.4 + rnd() * 1.6,
+      ph: rnd() * 6.28,
+      big,
+    });
+  }
+})();
+
+/* 预渲染：星云底 + 暗角 */
+const nebula = document.createElement('canvas');
+nebula.width = W; nebula.height = H;
+(function bakeNebula(){
+  const g = nebula.getContext('2d');
+  g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+  const blobs = [
+    [W*0.30, H*0.62, 220, 'rgba(30,52,120,.20)'],
+    [W*0.72, H*0.30, 240, 'rgba(52,36,96,.14)'],
+    [W*0.50, H*0.50, 300, 'rgba(18,40,86,.10)'],
+  ];
+  blobs.forEach(([x, y, r, col]) => {
+    const rg = g.createRadialGradient(x, y, 0, x, y, r);
+    rg.addColorStop(0, col); rg.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = rg; g.fillRect(0, 0, W, H);
+  });
+  const vg = g.createRadialGradient(W/2, H/2, H*0.28, W/2, H/2, H*0.92);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(0,0,0,.62)');
+  g.fillStyle = vg; g.fillRect(0, 0, W, H);
+})();
+
+/* ============================================================
+   工具
+   ============================================================ */
+const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+const seg = (t, a, b) => clamp01((t - a) / (b - a));
+const easeOut = p => 1 - Math.pow(1 - p, 3);
+const easeInOut = p => p < .5 ? 4*p*p*p : 1 - Math.pow(-2*p+2, 3)/2;
+
+/* ============================================================
+   绘制一帧
+   ============================================================ */
+const BAND = sampleBand(A, 280);
+
+function drawFrame(g, t){
+  const shrinkP = easeInOut(seg(t, 1.72, 2.12));
+  const scale = 1 + (S_MARK - 1) * shrinkP;
+  const cx = CX + (MARK_CX - CX) * shrinkP;
+  const cy = CY + (MARK_CY - CY) * shrinkP;
+
+  /* --- 底 --- */
+  g.globalCompositeOperation = 'source-over';
+  g.globalAlpha = 1;
+  g.drawImage(nebula, 0, 0);
+
+  /* --- 星野 --- */
+  const starP = easeOut(seg(t, 0, 0.85));
+  STARS.forEach(s => {
+    const tw = 0.55 + 0.45 * Math.sin(t * s.tw + s.ph);
+    const a = s.a * tw * starP;
+    if (a <= 0.01) return;
+    g.fillStyle = `rgba(228,236,255,${a})`;
+    g.beginPath(); g.arc(s.x, s.y, s.r, 0, 6.2832); g.fill();
+    if (s.big){
+      g.strokeStyle = `rgba(200,216,255,${a * .30})`;
+      g.lineWidth = .6;
+      g.beginPath();
+      g.moveTo(s.x - s.r * 3.4, s.y); g.lineTo(s.x + s.r * 3.4, s.y);
+      g.moveTo(s.x, s.y - s.r * 3.4); g.lineTo(s.x, s.y + s.r * 3.4);
+      g.stroke();
+    }
+  });
+
+  /* --- 粒子 --- */
+  const partFade = 1 - seg(t, 1.02, 1.30);
+  const colorSettle = seg(t, 0.62, 1.15);
+  if (partFade > 0.002){
+    g.globalCompositeOperation = 'lighter';
+    PARTS.forEach(p => {
+      const pr = seg(t, p.t0, p.t0 + p.dur);
+      if (pr <= 0) return;
+      const e = easeOut(pr);
+      const k = 1 - e;
+
+      // 落位前的漂移：缓慢绕行，落位后几乎不动
+      const drift = 0.010 * Math.sin(t * 0.9 + p.ph);
+      const [bx, by] = lem(p.u + drift * (1 - e * .3), A);
+
+      const x = cx + (bx + p.nx * 0 + p.jx * k) * scale + p.nx * (BW * .5) * 0 * scale;
+      const y = cy + (by + p.jy * k) * scale;
+
+      // 从路径后方沿切向滑入
+      const fly = p.d0 * k;
+      const px = x - p.tx * fly * scale + p.nx * p.jx * k * 0.5 * scale;
+      const py = y - p.ty * fly * scale + p.ny * p.jy * k * 0.5 * scale;
+
+      const col = rampAt(normX(bx));
+      const mixK = colorSettle;                        // 早期偏冷白，后期才带色
+      const R = Math.round(168 + (col[0] - 168) * mixK);
+      const G = Math.round(198 + (col[1] - 198) * mixK);
+      const B = Math.round(255 + (col[2] - 255) * mixK);
+
+      const alive = (1 - Math.abs(e - .5) * 0.0) * partFade;
+      const a = Math.min(1, Math.pow(pr, 0.85)) * alive;
+
+      // 光晕：两层，都很小，靠叠加形成密度
+      g.fillStyle = `rgba(${R},${G},${B},${0.075 * a})`;
+      g.beginPath(); g.arc(px, py, p.r * 3.2, 0, 6.2832); g.fill();
+      g.fillStyle = `rgba(${R},${G},${B},${0.34 * a})`;
+      g.beginPath(); g.arc(px, py, p.r * 1.55, 0, 6.2832); g.fill();
+      // 芯：白但收小，色相才不会被吃掉
+      g.fillStyle = `rgba(255,255,255,${0.62 * a})`;
+      g.beginPath(); g.arc(px, py, p.r * 0.58, 0, 6.2832); g.fill();
+    });
+    g.globalCompositeOperation = 'source-over';
+  }
+
+  /* --- 光核 --- */
+  const coreP = seg(t, 0.04, 0.55);
+  const coreOut = 1 - seg(t, 1.55, 2.30) * 0.86;
+  if (coreP > 0){
+    const pulse = 1 + 0.12 * Math.sin(t * 4.2);
+    const R = (22 + 12 * seg(t, 0.5, 1.6)) * scale * pulse;
+    const a = coreP * coreOut * (1 - 0.45 * seg(t, 1.0, 1.4));
+    g.globalCompositeOperation = 'lighter';
+    const rg = g.createRadialGradient(cx, cy, 0, cx, cy, R);
+    rg.addColorStop(0, `rgba(248,252,255,${0.92 * a})`);
+    rg.addColorStop(0.30, `rgba(186,224,255,${0.40 * a})`);
+    rg.addColorStop(0.66, `rgba(108,160,255,${0.12 * a})`);
+    rg.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = rg;
+    g.beginPath(); g.arc(cx, cy, R, 0, 6.2832); g.fill();
+    g.globalCompositeOperation = 'source-over';
+  }
+
+  /* --- 色带 --- */
+  const bandIn = seg(t, 1.00, 1.38);
+  if (bandIn > 0.002){
+    drawRibbon(g, t, cx, cy, scale, bandIn);
+  }
+
+  /* --- 标识辉光 --- */
+  const haloP = seg(t, 1.95, 2.45);
+  if (haloP > 0){
+    g.globalCompositeOperation = 'lighter';
+    const HR = MARK_W * 0.78;
+    const hg = g.createRadialGradient(MARK_CX, MARK_CY, 0, MARK_CX, MARK_CY, HR);
+    hg.addColorStop(0, `rgba(120,150,255,${0.10 * haloP})`);
+    hg.addColorStop(0.55, `rgba(90,120,220,${0.045 * haloP})`);
+    hg.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = hg;
+    g.beginPath(); g.arc(MARK_CX, MARK_CY, HR, 0, 6.2832); g.fill();
+    g.globalCompositeOperation = 'source-over';
+  }
+
+  /* --- 文字 --- */
+  drawLockup(g, t);
+
+  /* --- 底部状态 --- */
+  drawStatus(g, t);
+}
+
+function drawRibbon(g, t, cx, cy, scale, alpha){
+  // 梳齿只在「大形态」阶段存在；缩成标识时必须褪干净，否则会像加了一层网纹
+  const combK = clamp01((scale - 0.42) / 0.40);
+  const combIn = seg(t, 1.16, 1.62) * combK;
+  const breathe = 1 + 0.008 * Math.sin(t * 1.9);
+
+  g.save();
+  g.translate(cx, cy);
+  g.scale(scale * breathe, scale * breathe);
+  g.globalAlpha = alpha;
+
+  // 横向渐变（沿整个形态）
+  const grd = g.createLinearGradient(-A - BW/2, 0, A + BW/2, 0);
+  grd.addColorStop(0.00, '#5c7bfd');
+  grd.addColorStop(0.14, '#4589f8');
+  grd.addColorStop(0.28, '#36aef0');
+  grd.addColorStop(0.42, '#45c6b4');
+  grd.addColorStop(0.52, '#6fd683');
+  grd.addColorStop(0.62, '#c3d958');
+  grd.addColorStop(0.70, '#f5d94e');
+  grd.addColorStop(0.80, '#ffbb42');
+  grd.addColorStop(0.90, '#fe9145');
+  grd.addColorStop(1.00, '#fe6a68');
+
+  // 全部四边形合成一条路径再一次性填充：
+  // 逐个 fill 会在相邻边留下抗锯齿细线（缩小时特别明显，像一层网纹）
+  const hw = BW / 2;
+  g.fillStyle = grd;
+  g.beginPath();
+  for (let i = 0; i < BAND.length - 1; i++){
+    const p = BAND[i], q = BAND[i+1];
+    g.moveTo(p.x + p.nx*hw, p.y + p.ny*hw);
+    g.lineTo(q.x + q.nx*hw, q.y + q.ny*hw);
+    g.lineTo(q.x - q.nx*hw, q.y - q.ny*hw);
+    g.lineTo(p.x - p.nx*hw, p.y - p.ny*hw);
+    g.closePath();
+  }
+  g.fill();
+
+  // 梳齿：垂直于路径的细线，决定「笔触」质感
+  if (combIn > 0.015){
+    const N = 620;
+    g.lineCap = 'butt';
+    for (let i = 0; i < N; i++){
+      const idx = Math.round(i / N * (BAND.length - 1));
+      const p = BAND[idx];
+      const dark = (i % 2 === 0);
+      g.strokeStyle = dark
+        ? `rgba(0,0,0,${0.105 * combIn})`
+        : `rgba(255,255,255,${0.05 * combIn})`;
+      g.lineWidth = 0.55;
+      g.beginPath();
+      g.moveTo(p.x - p.nx*hw, p.y - p.ny*hw);
+      g.lineTo(p.x + p.nx*hw, p.y + p.ny*hw);
+      g.stroke();
+    }
+    // 外缘细毛刺：让边缘不像矢量硬边
+    for (let i = 0; i < N; i += 2){
+      const idx = Math.round(i / N * (BAND.length - 1));
+      const p = BAND[idx];
+      g.strokeStyle = `rgba(255,255,255,${0.075 * combIn})`;
+      g.lineWidth = 0.5;
+      g.beginPath();
+      g.moveTo(p.x + p.nx*hw, p.y + p.ny*hw);
+      g.lineTo(p.x + p.nx*(hw + 2.2), p.y + p.ny*(hw + 2.2));
+      g.moveTo(p.x - p.nx*hw, p.y - p.ny*hw);
+      g.lineTo(p.x - p.nx*(hw + 1.6), p.y - p.ny*(hw + 1.6));
+      g.stroke();
+    }
+  }
+
+  // 交叉处的一点高光
+  const pip = g.createRadialGradient(0, 0, 0, 0, 0, 26);
+  pip.addColorStop(0, `rgba(226,255,226,${0.30 * combIn})`);
+  pip.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = pip;
+  g.beginPath(); g.arc(0, 0, 26, 0, 6.2832); g.fill();
+
+  g.restore();
+  g.globalAlpha = 1;
+}
+
+function drawLockup(g, t){
+  const tp = seg(t, 2.10, 2.66);
+  if (tp <= 0) return;
+
+  const chars = ['无', '限', '画', '布'];
+  g.save();
+  g.textBaseline = 'alphabetic';
+  g.font = `700 ${TITLE_FS}px "Microsoft YaHei UI","Microsoft YaHei","PingFang SC",sans-serif`;
+
+  // 字距从松到紧收
+  const track = 1 + 13 * (1 - easeOut(tp));
+  const widths = chars.map(c => g.measureText(c).width);
+  const adv = widths.reduce((a,b)=>a+b,0) + track * (chars.length - 1);
+
+  const x0 = MARK_CX + MARK_W / 2 + GAP;
+  const baseY = MARK_CY + 11;
+  let x = x0;
+
+  chars.forEach((c, i) => {
+    const pp = clamp01((t - 2.10 - i * 0.062) / 0.40);
+    if (pp <= 0) return;
+    const e = easeOut(pp);
+    g.fillStyle = `rgba(243,246,252,${0.96 * e})`;
+    g.fillText(c, x, baseY + (1 - e) * 9);
+    x += widths[i] + track;
+  });
+
+  // 英文副标
+  const p2 = seg(t, 2.38, 2.88);
+  if (p2 > 0){
+    const e = easeOut(p2);
+    g.font = `500 9px ui-monospace,"Cascadia Mono",Consolas,monospace`;
+    g.fillStyle = `rgba(146,156,178,${0.88 * e})`;
+    const sub = 'I N F I N I T E   C A N V A S';
+    g.fillText(sub, x0 + 1, baseY + 21 + (1 - e) * 4);
+  }
+  g.restore();
+}
+
+function drawStatus(g, t){
+  const p = seg(t, 2.30, 2.95);
+  if (p <= 0) return;
+  const e = easeOut(p);
+
+  g.save();
+  g.font = `400 9px ui-monospace,"Cascadia Mono",Consolas,monospace`;
+  g.fillStyle = `rgba(138,147,168,${0.95 * e})`;
+  g.textBaseline = 'alphabetic';
+  g.fillText('正在启动本地服务 · 127.0.0.1', 32, H - 30);
+
+  // 1px 进度：随动画推进到 94%，留一点给真实的启动耗时
+  const x0 = 32, wline = 108, y = H - 21;
+  g.fillStyle = `rgba(255,255,255,${0.07 * e})`;
+  g.fillRect(x0, y, wline, 1);
+
+  const prog = Math.min(0.94, (t / 3.6) * 1.02);
+  const grd = g.createLinearGradient(x0, 0, x0 + wline, 0);
+  grd.addColorStop(0, `rgba(92,123,253,${0.55 * e})`);
+  grd.addColorStop(1, `rgba(254,106,104,${0.55 * e})`);
+  g.fillStyle = grd;
+  g.fillRect(x0, y, wline * prog, 1);
+  g.restore();
+}
+
+/* ============================================================
+   播放器
+   ============================================================ */
+const cv = document.getElementById('cv');
+const DPR = 2;
+cv.width = W * DPR; cv.height = H * DPR;
+const ctx = cv.getContext('2d');
+ctx.scale(DPR, DPR);
+
+const T_TOTAL = 3.6;
+let playing = true, tNow = 0, last = 0;
+
+function render(){
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  drawFrame(ctx, tNow);
+}
+
+function loopFn(now){
+  if (!last) last = now;
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  if (playing){
+    tNow += dt;
+    if (tNow >= T_TOTAL){
+      if (document.getElementById('loopChk').checked) tNow = 0;
+      else { tNow = T_TOTAL; playing = false; setPlayIcon(); }
+    }
+    syncUI();
+  }
+  render();
+  requestAnimationFrame(loopFn);
+}
+
+const scrub = document.getElementById('scrub');
+const tNowEl = document.getElementById('tNow');
+
+function syncUI(){
+  scrub.value = Math.round(tNow * 1000);
+  tNowEl.textContent = tNow.toFixed(2) + ' s';
+}
+function setPlayIcon(){
+  document.getElementById('playIcon').innerHTML = playing
+    ? '<path d="M3.5 2.5h3v11h-3zM9.5 2.5h3v11h-3z"/>'
+    : '<path d="M4 2.5l9 5.5-9 5.5z"/>';
+}
+
+scrub.oninput = () => {
+  tNow = scrub.value / 1000;
+  playing = false; setPlayIcon(); syncUI(); render();
+};
+document.getElementById('playBtn').onclick = () => {
+  if (tNow >= T_TOTAL) tNow = 0;
+  playing = !playing; setPlayIcon();
+};
+document.getElementById('replayBtn').onclick = () => {
+  tNow = 0; playing = true; setPlayIcon(); syncUI(); render();
+};
+
+/* 关键帧缩略图 */
+const THUMBS = [0.55, 1.10, 1.45, 2.02, 3.10];
+const marksBox = document.getElementById('marks');
+THUMBS.forEach((tt, i) => {
+  const b = document.createElement('button');
+  b.className = 'mark';
+  const c = document.createElement('canvas');
+  const tw = 236, th = Math.round(tw * H / W);
+  c.width = tw * 1.4; c.height = th * 1.4;
+  b.appendChild(c);
+  const lb = document.createElement('span');
+  lb.textContent = tt.toFixed(2) + 's';
+  b.appendChild(lb);
+  b.onclick = () => {
+    tNow = tt; playing = false; setPlayIcon(); syncUI(); render();
+    [...marksBox.children].forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+  };
+  marksBox.appendChild(b);
+
+  const g2 = c.getContext('2d');
+  g2.scale(tw * 1.4 / W, th * 1.4 / H);
+  drawFrame(g2, tt);
+});
+marksBox.firstElementChild.classList.add('on');
+
+/* 显示倍率 */
+document.getElementById('sizeSeg').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  [...e.currentTarget.querySelectorAll('button')].forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  const screen = document.getElementById('screen');
+  screen.style.maxWidth = b.dataset.z === '0.5' ? '560px' : '1120px';
+};
+
+window.__seek = v => { tNow = v; playing = false; setPlayIcon(); syncUI(); render(); };
+window.__play = () => { playing = true; setPlayIcon(); };
+
+setPlayIcon();
+syncUI();
+render();
+requestAnimationFrame(loopFn);
+</script>
+</body>
+</html>

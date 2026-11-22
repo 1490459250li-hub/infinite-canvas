@@ -1,0 +1,128 @@
+<!-- ==== V26-HTML-START ==== -->
+<!-- v2.6 · AI 局部重绘工作台：左图右参数 -->
+<div class="snc-inp-scrim" id="sncInpScrim" hidden></div>
+<div class="snc-inp" id="sncInp" hidden role="dialog" aria-modal="true" aria-label="AI局部重绘">
+  <div class="snc-inp-main">
+    <div class="snc-inp-head">
+      <b>AI局部重绘</b>
+      <span class="snc-inp-hint" id="sncInpHint">选区 0 块 · 原图保留</span>
+    </div>
+    <div class="snc-inp-canvas" id="sncInpCanvas">
+      <div class="snc-inp-wrap" id="sncInpWrap">
+        <img id="sncInpImg" alt="待局部重绘的图片" draggable="false">
+        <canvas class="snc-inp-mask" id="sncInpMask"></canvas>
+        <div class="snc-inp-empty" id="sncInpEmpty" hidden>这张卡片还没有可编辑的位图</div>
+      </div>
+    </div>
+    <div class="snc-inp-tools" id="sncInpTools">
+      <button type="button" data-tool="pointer" class="is-on" title="绘制选区">指针</button>
+      <button type="button" data-tool="hand" title="拖动画面">抓手</button>
+      <span class="snc-inp-sep"></span>
+      <button type="button" data-tool="zoomout" title="缩小">−</button>
+      <span class="snc-inp-zoom" id="sncInpZoom">100%</span>
+      <button type="button" data-tool="zoomin" title="放大">＋</button>
+      <span class="snc-inp-sep"></span>
+      <span class="snc-inp-navtip">Ctrl+Z 撤销 · Ctrl+Shift+Z 重做</span>
+    </div>
+  </div>
+  <aside class="snc-inp-side">
+    <div class="snc-inp-sec">
+      <h4>生成分辨率</h4>
+      <div class="snc-inp-chips" data-group="res">
+        <button type="button" data-v="0" class="is-on" title="保持原图像素尺寸，只重绘选区，不放大也不缩小">原图</button>
+        <button type="button" data-v="2048" title="成品长边 2048px">2K</button>
+        <button type="button" data-v="4096" title="成品长边 4096px（细节更足，出图更慢）">4K</button>
+      </div>
+      <p class="snc-inp-note" id="sncInpResNote">输出尺寸 = 原图，不会有额外插值。</p>
+    </div>
+
+    <div class="snc-inp-sec">
+      <h4>重绘模式</h4>
+      <div class="snc-inp-chips" data-group="mode">
+        <button type="button" data-v="desc" title="不建选区，整张图按描述重绘">描述重绘</button>
+        <button type="button" data-v="select" class="is-on" title="先框出要改的地方，只重绘选区">选区重绘</button>
+      </div>
+    </div>
+
+    <div class="snc-inp-sec">
+      <h4>生图比例</h4>
+      <div class="snc-inp-chips" data-group="ratio">
+        <button type="button" data-v="auto" class="is-on">自动</button>
+        <button type="button" data-v="3:2">3:2</button>
+        <button type="button" data-v="2:3">2:3</button>
+        <button type="button" data-v="16:9">16:9</button>
+        <button type="button" data-v="9:16">9:16</button>
+        <button type="button" data-v="4:3">4:3</button>
+        <button type="button" data-v="3:4">3:4</button>
+        <button type="button" data-v="1:1">1:1</button>
+      </div>
+    </div>
+
+    <div class="snc-inp-sec" id="sncInpSecTool">
+      <h4>建立选区</h4>
+      <div class="snc-inp-chips" data-group="tool">
+        <button type="button" data-v="rect">矩形</button>
+        <button type="button" data-v="lasso" class="is-on">套索</button>
+        <button type="button" data-v="brush">涂抹</button>
+        <button type="button" data-v="eraser" title="从已有选区里减掉刷过的部分">减选</button>
+        <button type="button" data-v="detect" title="自动框出画面里的主体">识别</button>
+      </div>
+      <div class="snc-inp-row snc-inp-brushrow">
+        <span class="snc-inp-brushlab">笔刷</span>
+        <input type="range" id="sncInpBrush" min="4" max="160" step="2" value="24"
+               aria-label="笔刷大小" title="拖动调整笔刷大小（画布上会跟着鼠标显示笔尖；也可用 [ ] 键）">
+        <b class="snc-inp-brushv" id="sncInpBrushVal">24px</b>
+      </div>
+      <div class="snc-inp-row snc-inp-toolrow">
+        <span id="sncInpToolInfo">套索 · 笔刷 24px</span>
+      </div>
+    </div>
+
+    <div class="snc-inp-sec" id="sncInpSecEdit">
+      <h4>编辑选区</h4>
+      <div class="snc-inp-chips" data-group="edit">
+        <button type="button" data-edit="invert" title="把选区反过来：框住的变成不框，其余全部选上">反选</button>
+        <button type="button" data-edit="clear" title="把已经画好的选区全部去掉（可 Ctrl+Z 撤回）">清空选区</button>
+      </div>
+    </div>
+
+    <div class="snc-inp-sec snc-inp-grow">
+      <h4>生成描述</h4>
+      <textarea class="snc-inp-prompt" id="sncInpPrompt" rows="3" maxlength="600"
+        placeholder="描述一下希望选区区域内变成什么..."></textarea>
+      <div class="snc-inp-row snc-inp-refrow">
+        <span class="snc-inp-brushlab">参考图</span>
+        <div class="snc-inp-refs" id="sncInpRefList"></div>
+        <button type="button" class="snc-inp-refadd" id="sncInpRefAdd"
+                title="添加参考图：会一起发给模型（最多 3 张），用来交代材质 / 风格">＋ 图片</button>
+      </div>
+    </div>
+
+    <button type="button" class="snc-inp-go" id="sncInpGo">开始生成</button>
+    <p class="snc-inp-tip">选区重绘：套索单击落点、回到起点或双击闭合；矩形直接拖；涂抹按住画；减选刷过哪里就从选区里减掉哪里；识别是一次性动作。描述重绘不用建选区，整张图按描述重绘。结果派生为新卡，原图与连线保留。</p>
+  </aside>
+  <button type="button" class="snc-inp-x" id="sncInpX" aria-label="关闭局部重绘" title="关闭 (Esc)">×</button>
+  <input type="file" id="sncInpFile" accept="image/*" multiple hidden>
+</div>
+
+<!-- v2.6 · B4：小地图 / 图层面板（默认收起，顶栏按钮打开） -->
+<div class="snc-mini" id="sncMini" hidden>
+  <canvas id="sncMiniCanvas" width="380" height="264"></canvas>
+  <span class="snc-mini-cap">小地图 · 点击定位</span>
+  <button type="button" class="snc-mini-x" id="sncMiniX" title="收起小地图">×</button>
+</div>
+<div class="snc-layers" id="sncLayers" hidden>
+  <div class="snc-layers-h">
+    <span>图层</span>
+    <i class="snc-layers-n" id="sncLayersCount"></i>
+    <button type="button" id="sncLayersX" title="收起图层">×</button>
+  </div>
+  <div class="snc-layers-tools">
+    <button type="button" id="sncLayersGroup" title="把选中的卡片合成一组（画布上 Shift 点选多张）">成组</button>
+    <button type="button" id="sncLayersUngroup" title="解散选中卡片所在的组">解组</button>
+    <button type="button" id="sncLayersAll" title="把隐藏的卡片全部显示回来">全部显示</button>
+  </div>
+  <div class="snc-layers-b" id="sncLayersBody"></div>
+  <p class="snc-layers-tip">拖动可排序 · 拖到组上可放进组 · 点眼睛显隐 · 双击组名可改名</p>
+</div>
+<!-- ==== V26-HTML-END ==== -->

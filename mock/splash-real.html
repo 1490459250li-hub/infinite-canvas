@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>启动窗口 · 直接用素材本身（动画.mp4 + logo.png）</title>
+<style>
+  :root{
+    --bg:#07080b; --panel:#0e0f14; --line:#1d1f27; --ink:#e8eaf0; --ink2:#9aa1b2; --ink3:#646b7c;
+    --accent:#5c7bfd;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; min-height:100%; background:var(--bg);}
+  body{
+    font:13px/1.55 "Microsoft YaHei UI","Segoe UI",system-ui,sans-serif;
+    color:var(--ink); -webkit-font-smoothing:antialiased;
+    font-feature-settings:"tnum";
+  }
+  header{padding:18px 22px 12px; border-bottom:1px solid var(--line);
+    display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;}
+  header h1{margin:0; font-size:14px; font-weight:600; letter-spacing:.02em;}
+  header .tag{font-size:11px; color:var(--ink3); letter-spacing:.14em;}
+  main{display:flex; gap:20px; padding:20px 22px 26px; align-items:flex-start;}
+  .left{flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:12px;}
+  aside{width:296px; flex:0 0 296px; display:flex; flex-direction:column; gap:12px;}
+
+  /* 桌面背景：只为看清启动框落在屏幕上的样子 */
+  .desk{
+    position:relative; border-radius:12px; overflow:hidden;
+    border:1px solid var(--line);
+    background:
+      radial-gradient(900px 520px at 26% 12%, #1b2740 0%, transparent 62%),
+      radial-gradient(760px 460px at 82% 84%, #2a1f2e 0%, transparent 60%),
+      linear-gradient(160deg,#0a0d14,#05060a 60%,#08060b);
+    display:grid; place-items:center; padding:64px 40px;
+    min-height:560px;
+  }
+  .desk::after{
+    content:"屏幕背景（仅示意）"; position:absolute; left:14px; bottom:12px;
+    font-size:10.5px; color:#3c4254; letter-spacing:.12em;
+  }
+
+  /* ——— 启动窗口：640×360，无边框，圆角裁切 ——— */
+  .splash{
+    position:relative; width:640px; height:360px; border-radius:12px; overflow:hidden;
+    background:#04050a;
+    box-shadow:0 0 0 1px rgba(255,255,255,.06), 0 34px 80px -30px rgba(0,0,0,.9);
+    transform-origin:center;
+  }
+  .splash video{display:block; width:100%; height:100%; object-fit:cover;}
+  .splash .prog{
+    position:absolute; left:0; right:0; bottom:0; height:2px; background:rgba(255,255,255,.06);
+    opacity:0; transition:opacity .25s;
+  }
+  .splash.show-prog .prog{opacity:1;}
+  .splash .prog i{display:block; height:100%; width:0;
+    background:linear-gradient(90deg,#5c7bfd,#36aef0,#6fd683);}
+
+  /* ——— 控件 ——— */
+  .bar{display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:9px 11px;}
+  .btn{height:28px; padding:0 11px; border-radius:7px; border:1px solid #262a35;
+    background:#161922; color:var(--ink); font:inherit; font-size:12px; cursor:pointer;}
+  .btn:hover{background:#1c2029; border-color:#333846;}
+  .btn.on{background:#1b2440; border-color:#3a5390; color:#c8d6ff;}
+  .seg{display:flex; gap:0; border:1px solid #262a35; border-radius:7px; overflow:hidden;}
+  .seg button{height:26px; padding:0 10px; border:0; background:transparent; color:var(--ink2);
+    font:inherit; font-size:11.5px; cursor:pointer;}
+  .seg button.on{background:#1b2440; color:#cfdaff;}
+  .lbl{font-size:11px; color:var(--ink3); letter-spacing:.1em;}
+  .sp{flex:1;}
+
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:13px 14px;}
+  .card h3{margin:0 0 7px; font-size:12px; font-weight:600; letter-spacing:.06em; color:var(--ink);}
+  .card p{margin:0; font-size:12px; line-height:1.7; color:var(--ink2);}
+  .card code{font-family:Consolas,monospace; font-size:11.5px; color:#a8b4d8;}
+  .kv{display:grid; grid-template-columns:70px 1fr; gap:5px 10px; font-size:11.5px; color:var(--ink2);}
+  .kv b{color:var(--ink3); font-weight:400;}
+  .logo-strip{display:flex; gap:10px; align-items:center; margin-top:6px;}
+  .logo-strip img{display:block}
+  .note{font-size:11.5px; color:var(--ink3); line-height:1.7;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>启动窗口</h1>
+  <span class="tag">直接播放你给的 动画.mp4 · 无重绘</span>
+</header>
+
+<main>
+  <div class="left">
+    <div class="desk">
+      <div class="splash" id="splash">
+        <video id="v" src="real/splash.mp4" muted playsinline preload="auto"></video>
+        <div class="prog"><i id="pi"></i></div>
+      </div>
+    </div>
+
+    <div class="bar">
+      <button class="btn" id="replay">重播</button>
+      <span class="lbl">尺寸</span>
+      <div class="seg" id="sizeSeg">
+        <button data-w="640" class="on">640×360</button>
+        <button data-w="800">800×450</button>
+        <button data-w="480">480×270</button>
+      </div>
+      <label class="btn" style="display:flex;align-items:center;gap:7px;">
+        <input type="checkbox" id="prog"> 加载条
+      </label>
+      <span class="sp"></span>
+      <span class="lbl" id="st">就绪</span>
+    </div>
+  </div>
+
+  <aside>
+    <div class="card">
+      <h3>这一版没有手画的东西</h3>
+      <p>启动框里放的就是 <code>动画.mp4</code> 这个文件本身（2560×1440 / 30fps / 3.43s / 103 帧），缩放到窗口尺寸播放，播完停在最后一帧等主界面。</p>
+    </div>
+
+    <div class="card">
+      <h3>素材参数</h3>
+      <div class="kv">
+        <b>视频</b><span>2560×1440 · 30 fps · 3.43 s</span>
+        <b>帧数</b><span>103 帧</span>
+        <b>标识</b><span>logo.png · 432×170 彩色 ∞</span>
+        <b>背景</b><span>近黑（#04050a）星野</span>
+      </div>
+      <div class="logo-strip">
+        <img src="real/mark.png" width="88" alt="logo">
+        <img src="real/mark.png" width="44" alt="logo">
+        <img src="real/mark.png" width="22" alt="logo">
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>打包时怎么放</h3>
+      <p class="note">不是放一个播放器，而是把这 103 帧按 640×360 存成压缩帧序列（zlib 逐帧 ≈ 8.6 MB），GDI 直接贴图 —— 画出来的像素就是视频的像素，速度也不依赖解码器。</p>
+    </div>
+  </aside>
+</main>
+
+<script>
+const v = document.getElementById('v');
+const splash = document.getElementById('splash');
+const st = document.getElementById('st');
+const pi = document.getElementById('pi');
+
+function play(){
+  v.currentTime = 0;
+  v.play().catch(()=>{});
+}
+document.getElementById('replay').onclick = play;
+
+v.addEventListener('play', () => st.textContent = '播放中');
+v.addEventListener('ended', () => st.textContent = '定格在最后一帧');
+v.addEventListener('timeupdate', () => {
+  const p = v.duration ? v.currentTime / v.duration : 0;
+  pi.style.width = (p * 100).toFixed(1) + '%';
+});
+
+document.getElementById('prog').onchange = e => splash.classList.toggle('show-prog', e.target.checked);
+
+document.getElementById('sizeSeg').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  [...e.currentTarget.querySelectorAll('button')].forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  const w = +b.dataset.w;
+  splash.style.width = w + 'px';
+  splash.style.height = Math.round(w * 9 / 16) + 'px';
+};
+
+play();
+</script>
+</body>
+</html>

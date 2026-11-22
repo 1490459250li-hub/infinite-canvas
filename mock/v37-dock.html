@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>v3.7 技能窗口统一 · 效果图</title>
+<style>
+:root{
+  --paper:#0d0e10; --panel:#141619; --card:#1a1d21; --raise:#1f2329; --hover:#242830;
+  --line:#262b32; --line2:#2e333a; --line3:#3a4149; --edge:#4a5058;
+  --ink:#e9e7e2; --inkStrong:#f3efe8; --ink2:#c9c5bd; --ink3:#a8a49c;
+  --muted:#8f8c85; --faint:#6f6b64; --faint2:#5f5c56;
+  --glass:rgba(26,29,33,.92); --dot:#2a2e34;
+  --accent:#e0603a; --accent-soft:rgba(224,96,58,.16);
+  --rail:248px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:#08090b;
+  font-family:ui-sans-serif,system-ui,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:14px;line-height:1.45;color:var(--ink);-webkit-font-smoothing:antialiased;}
+body{padding:26px;display:flex;flex-direction:column;gap:22px;align-items:center;}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;}
+textarea{font:inherit;}
+.stage{width:1400px;}
+.cap{display:flex;align-items:baseline;gap:9px;margin:0 0 8px 2px;}
+.cap b{font-size:13px;color:var(--inkStrong);font-weight:600;}
+.cap span{font-size:11.5px;color:var(--faint);}
+.cap i{font-style:normal;font-size:10.5px;color:var(--accent);border:1px solid var(--accent-soft);
+  background:rgba(224,96,58,.08);border-radius:99px;padding:1px 7px;}
+
+/* ---------- 假的应用外壳 ---------- */
+.app{position:relative;width:1400px;height:820px;overflow:hidden;border-radius:12px;
+  background:var(--paper);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),0 24px 60px -30px #000;}
+.rail{position:absolute;left:0;top:0;bottom:0;width:var(--rail);background:var(--panel);
+  border-right:1px solid var(--line);z-index:3;display:flex;flex-direction:column;
+  padding:0 0 10px;}
+.rail .brand{display:flex;align-items:center;gap:7px;height:52px;padding:0 14px;
+  font-size:12px;color:var(--ink2);font-weight:600;letter-spacing:.02em;}
+.rail .brand em{font-style:normal;font-size:9.5px;color:var(--faint);font-weight:400;
+  border:1px solid var(--line2);border-radius:4px;padding:0 4px;}
+.rail .sec{padding:12px 14px 5px;font-size:10px;letter-spacing:.08em;color:var(--faint2);}
+.rail .row{display:flex;align-items:center;gap:8px;padding:6px 14px;font-size:12px;color:var(--ink3);}
+.rail .row.on{background:var(--raise);color:var(--ink);box-shadow:inset 2px 0 0 var(--accent);}
+.rail .row i{font-style:normal;width:14px;height:14px;border-radius:3px;background:var(--line2);flex:none;}
+.rail .row.on i{background:var(--accent);}
+.top{position:absolute;left:var(--rail);right:0;top:0;height:52px;z-index:2;
+  display:flex;align-items:center;gap:8px;padding:0 14px;
+  background:linear-gradient(var(--paper),rgba(13,14,16,.6));border-bottom:1px solid rgba(0,0,0,.35);}
+.top .tab{font-size:11.5px;color:var(--ink3);padding:4px 9px;border-radius:6px;background:var(--card);
+  border:1px solid var(--line);}
+.top .tab.on{color:var(--ink);border-color:var(--line3);}
+.top .gap{flex:1;}
+.top .btn{font-size:11.5px;color:var(--muted);padding:4px 9px;border-radius:6px;
+  border:1px solid var(--line);background:var(--card);}
+.top .zoom{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums;}
+.cvs{position:absolute;inset:0 0 0 var(--rail);overflow:hidden;
+  background-image:radial-gradient(circle at 1px 1px,var(--dot) 1px,transparent 0);
+  background-size:22px 22px;}
+.card{position:absolute;border-radius:8px;background:var(--card);
+  box-shadow:0 0 0 1px var(--accent),0 22px 48px -22px rgba(0,0,0,.95);overflow:visible;}
+.card img{display:block;width:100%;height:100%;object-fit:cover;border-radius:8px;opacity:.92;}
+.card .lab{position:absolute;left:0;bottom:-19px;font-size:10.5px;color:var(--accent);
+  letter-spacing:.01em;}
+
+/* ---------- 统一工作台 ---------- */
+.dock{position:absolute;width:430px;display:flex;flex-direction:column;
+  background:var(--panel);border:1px solid var(--line2);border-radius:14px;
+  box-shadow:0 30px 66px -26px rgba(0,0,0,.96),0 1px 0 rgba(255,255,255,.05) inset;}
+.dock.sm{width:392px;}
+.hd{display:flex;align-items:center;gap:6px;padding:8px 8px 7px 11px;border-bottom:1px solid var(--hover);}
+.hd .ic{width:13px;height:13px;flex:none;fill:none;stroke:var(--accent);
+  stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+.hd b{flex:none;font-size:12px;font-weight:600;color:var(--ink);letter-spacing:.01em;padding-right:2px;}
+.chips{display:flex;gap:4px;flex:1;min-width:0;overflow:hidden;}
+.chip{display:flex;align-items:center;gap:3px;flex:none;max-width:148px;
+  padding:3px 7px 3px 9px;border-radius:7px;font-size:11px;line-height:1.35;
+  color:var(--ink3);background:var(--raise);border:1px solid var(--line2);white-space:nowrap;overflow:hidden;}
+.chip span{overflow:hidden;text-overflow:ellipsis;}
+.chip svg{width:9px;height:9px;flex:none;fill:none;stroke:var(--faint);stroke-width:2.2;
+  stroke-linecap:round;stroke-linejoin:round;}
+.chip.on{color:var(--ink);border-color:var(--accent);background:var(--line);}
+.chip.on svg{stroke:var(--accent);}
+.x{width:24px;height:24px;flex:none;border-radius:7px;display:grid;place-items:center;
+  color:var(--muted);font-size:16px;line-height:1;}
+.bd{display:flex;gap:8px;padding:9px 10px 8px;align-items:stretch;}
+.ref{position:relative;flex:none;width:62px;height:62px;border-radius:9px;overflow:hidden;
+  background:var(--card);border:1px solid var(--line2);}
+.ref img{width:100%;height:100%;object-fit:cover;display:block;}
+.ref .num{position:absolute;left:4px;bottom:4px;min-width:14px;height:14px;padding:0 3px;
+  border-radius:4px;background:rgba(8,9,11,.82);color:#fff;font-size:9.5px;display:grid;
+  place-items:center;line-height:1;}
+.tx{flex:1;min-width:0;resize:none;padding:8px 10px;border-radius:9px;
+  background:var(--card);border:1px solid var(--line);color:var(--ink2);
+  font-size:12px;line-height:1.55;outline:none;min-height:62px;max-height:132px;}
+.tx::placeholder{color:var(--faint2);}
+.tx.full{color:var(--ink3);font-size:11.5px;line-height:1.7;min-height:112px;}
+.ft{display:flex;align-items:center;gap:8px;padding:0 10px 9px;}
+.ft .hint{flex:1;min-width:0;font-size:10.5px;color:var(--faint);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;}
+.ft .ghost{flex:none;font-size:10.5px;color:var(--ink3);padding:4px 8px;border-radius:7px;
+  border:1px solid var(--line2);background:var(--raise);}
+.ft .ghost.on{color:var(--accent);border-color:var(--accent-soft);background:rgba(224,96,58,.09);}
+.go{display:flex;align-items:center;gap:5px;flex:none;padding:7px 13px;border-radius:9px;
+  background:var(--accent);color:#0b0c0e;font-size:12px;font-weight:600;}
+.go svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;
+  stroke-linecap:round;stroke-linejoin:round;}
+/* 下拉 */
+.menu{position:absolute;width:212px;padding:5px;border-radius:10px;background:var(--card);
+  border:1px solid var(--line2);box-shadow:0 20px 44px -20px rgba(0,0,0,.96);}
+.menu-h{display:flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.06em;
+  color:var(--faint);padding:3px 6px 6px;}
+.menu-h button{color:var(--ink3);font-size:10.5px;padding:1px 5px;border-radius:5px;
+  background:var(--raise);border:1px solid var(--line2);}
+.menu button[data-m]{display:flex;align-items:center;gap:6px;width:100%;text-align:left;
+  padding:6px 8px;border-radius:7px;color:var(--ink2);font-size:12.5px;}
+.menu button[data-m].on{color:var(--accent);font-weight:600;}
+.menu button[data-m] i{margin-left:auto;font-style:normal;color:var(--faint2);font-size:12px;}
+.menu button[data-m] em{font-style:normal;font-size:9.5px;color:var(--faint2);margin-left:auto;}
+
+/* ---------- 技能抽屉 ---------- */
+.skpop{position:absolute;width:560px;max-height:600px;display:flex;flex-direction:column;overflow:hidden;
+  background:var(--panel);border:1px solid var(--line2);border-radius:13px;
+  box-shadow:0 28px 62px -24px rgba(0,0,0,.96),0 1px 0 rgba(255,255,255,.05) inset;}
+.skp-top{display:flex;align-items:center;gap:7px;padding:9px 9px 7px;}
+.search{flex:1;min-width:0;display:flex;align-items:center;gap:6px;padding:5px 9px;
+  background:var(--card);border:1px solid var(--line);border-radius:8px;font-size:12px;color:var(--faint2);}
+.search svg{width:13px;height:13px;flex:none;fill:none;stroke:var(--faint);stroke-width:1.8;stroke-linecap:round;}
+.skp-x{width:24px;height:24px;border-radius:6px;flex:none;display:grid;place-items:center;
+  color:var(--muted);font-size:15px;line-height:1;}
+.tabs{display:flex;gap:3px;padding:0 9px 8px;flex-wrap:wrap;}
+.tabs button{font-size:11.5px;padding:4px 10px;border-radius:99px;color:var(--muted);border:1px solid transparent;}
+.tabs button b{font-weight:600;margin-left:4px;color:var(--faint);font-size:10px;}
+.tabs button.on{background:var(--line);color:var(--ink);font-weight:600;}
+.tabs button.on b{color:var(--accent);}
+.skp-body{padding:2px 9px 10px;overflow:hidden;}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+.tile{position:relative;display:block;width:100%;aspect-ratio:16/10;overflow:hidden;
+  border-radius:9px;border:1px solid var(--line2);background:var(--card);text-align:left;}
+.tile img{width:100%;height:100%;object-fit:cover;display:block;}
+.tile em{position:absolute;left:0;right:0;bottom:0;padding:14px 8px 6px;font-style:normal;
+  font-size:11.5px;line-height:1.25;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.9);
+  background:linear-gradient(transparent,rgba(5,6,8,.96));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tile .lines{position:absolute;inset:0;
+  background:
+    linear-gradient(rgba(255,255,255,.55),rgba(255,255,255,.55)) 50% 0/1px 100% no-repeat,
+    linear-gradient(rgba(255,255,255,.55),rgba(255,255,255,.55)) 0 50%/100% 1px no-repeat;}
+.skp-foot{display:flex;align-items:center;gap:8px;padding:7px 10px;
+  border-top:1px solid var(--hover);box-shadow:0 -12px 16px -13px rgba(0,0,0,.62);}
+.skp-foot span{flex:1;min-width:0;font-size:10.5px;color:var(--faint);white-space:nowrap;overflow:hidden;}
+.skp-foot button{font-size:10.5px;padding:3px 9px;border-radius:99px;border:1px solid var(--line2);color:var(--ink3);}
+
+/* ---------- 对照图 ---------- */
+.cmp{width:1400px;background:var(--panel);border:1px solid var(--line2);border-radius:14px;
+  padding:26px 28px 30px;display:flex;flex-direction:column;gap:18px;}
+.cmp h3{margin:0;font-size:14px;font-weight:600;color:var(--inkStrong);letter-spacing:.01em;}
+.cmp .row2{display:flex;align-items:center;gap:14px;}
+.cmp .col{display:flex;gap:10px;flex-wrap:wrap;}
+.cmp .box{width:232px;padding:11px 12px;border-radius:10px;background:var(--card);
+  border:1px solid var(--line2);display:flex;flex-direction:column;gap:5px;}
+.cmp .box b{font-size:12px;color:var(--ink2);font-weight:600;display:flex;gap:6px;align-items:center;}
+.cmp .box b u{text-decoration:none;width:15px;height:15px;border-radius:4px;background:var(--line2);
+  color:var(--ink3);font-size:9.5px;display:grid;place-items:center;}
+.cmp .box p{margin:0;font-size:10.5px;line-height:1.55;color:var(--faint);}
+.cmp .box.dead{opacity:.62;}
+.cmp .box.dead b u{background:rgba(224,96,58,.16);color:var(--accent);}
+.cmp .arw{flex:none;width:26px;height:1px;background:var(--line3);position:relative;}
+.cmp .arw::after{content:"";position:absolute;right:0;top:-3px;width:7px;height:7px;
+  border-right:1px solid var(--line3);border-bottom:1px solid var(--line3);transform:rotate(-45deg);}
+.cmp .box.new{border-color:var(--accent);background:rgba(224,96,58,.07);}
+.cmp .box.new b{color:var(--ink);}
+.cmp .box.new p{color:var(--ink3);}
+</style>
+</head>
+<body>
+
+<!-- ① 统一工作台 · 建筑渲染 -->
+<section class="stage">
+  <div class="cap"><i>01</i><b>统一工作台 · 建筑渲染</b><span>三个下拉已选：高层办公 / 傍晚 / 晴朗 · 缩略图即参考图 · 右下生成</span></div>
+  <div class="app">
+    <div class="rail">
+      <div class="brand">无限画布 <em>v3.7</em></div>
+      <div class="sec">画板</div>
+      <div class="row on"><i></i>项目 A · 主画板</div>
+      <div class="row"><i></i>方案对比</div>
+      <div class="sec">工具</div>
+      <div class="row"><i></i>导入图片</div>
+      <div class="row"><i></i>技能库</div>
+      <div class="row"><i></i>设置</div>
+    </div>
+    <div class="top">
+      <div class="tab on">主画板</div><div class="tab">方案对比</div>
+      <div class="gap"></div>
+      <div class="zoom">100%</div>
+      <div class="btn">适应视图</div><div class="btn">导出</div>
+    </div>
+    <div class="cvs">
+      <div class="card" style="left:150px;top:150px;width:700px;height:467px;">
+        <img src="base.jpg" alt=""><span class="lab">图片 7 · 已选</span>
+      </div>
+      <div class="dock" style="left:270px;top:640px;">
+        <div class="hd">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></svg>
+          <b>建筑渲染</b>
+          <div class="chips">
+            <button class="chip on"><span>高层办公</span><svg viewBox="0 0 10 10"><path d="M2 4l3 3 3-3"/></svg></button>
+            <button class="chip on"><span>傍晚</span><svg viewBox="0 0 10 10"><path d="M2 4l3 3 3-3"/></svg></button>
+            <button class="chip on"><span>晴朗</span><svg viewBox="0 0 10 10"><path d="M2 4l3 3 3-3"/></svg></button>
+          </div>
+          <button class="x">×</button>
+        </div>
+        <div class="bd">
+          <div class="ref"><img src="base.jpg" alt=""><span class="num">1</span></div>
+          <textarea class="tx" placeholder="描述更多细节…（可不填，例如：加强入口雨棚的暖光）"></textarea>
+        </div>
+        <div class="ft"><span class="hint">派生 1 张 · 原图保留</span>
+          <button class="ghost">指令</button>
+          <button class="go">生成 <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ② 场景分镜 -->
+<section class="stage">
+  <div class="cap"><i>02</i><b>场景分镜 · 走进同一个窗</b><span>原来是一列无图无描述的纯文字菜单，现在只有一个「宫格」下拉，其余信息结构不变</span></div>
+  <div class="app">
+    <div class="rail">
+      <div class="brand">无限画布 <em>v3.7</em></div>
+      <div class="sec">画板</div>
+      <div class="row on"><i></i>项目 A · 主画板</div>
+      <div class="row"><i></i>方案对比</div>
+      <div class="sec">工具</div>
+      <div class="row"><i></i>导入图片</div>
+      <div class="row"><i></i>技能库</div>
+      <div class="row"><i></i>设置</div>
+    </div>
+    <div class="top">
+      <div class="tab on">主画板</div><div class="tab">方案对比</div>
+      <div class="gap"></div><div class="zoom">100%</div>
+      <div class="btn">适应视图</div><div class="btn">导出</div>
+    </div>
+    <div class="cvs">
+      <div class="card" style="left:150px;top:130px;width:700px;height:467px;">
+        <img src="base.jpg" alt=""><span class="lab">图片 7 · 已选</span>
+      </div>
+      <div class="dock" style="left:290px;top:640px;">
+        <div class="hd">
+          <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v16"/></svg>
+          <b>场景分镜</b>
+          <div class="chips">
+            <button class="chip on"><span>九宫格</span><svg viewBox="0 0 10 10"><path d="M2 4l3 3 3-3"/></svg></button>
+          </div>
+          <button class="x">×</button>
+        </div>
+        <div class="bd">
+          <div class="ref"><img src="base.jpg" alt=""><span class="num">1</span></div>
+          <textarea class="tx" placeholder="描述更多细节…（可不填，例如：第一格要带入口人流）"></textarea>
+        </div>
+        <div class="ft"><span class="hint">派生 1 张 · 原图保留</span>
+          <button class="ghost">指令</button>
+          <button class="go">生成 <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ③ 时间迁移 + 指令展开 -->
+<section class="stage">
+  <div class="cap"><i>03</i><b>时间迁移 · 单选也不特殊</b><span>左：一个下拉、窗更矮；右：点「指令」就地展开完整提示词，可改字后生成（替代原来的编辑面板）</span></div>
+  <div class="app">
+    <div class="rail">
+      <div class="brand">无限画布 <em>v3.7</em></div>
+      <div class="sec">画板</div>
+      <div class="row on"><i></i>项目 A · 主画板</div>
+      <div class="row"><i></i>方案对比</div>
+      <div class="sec">工具</div>
+      <div class="row"><i></i>导入图片</div>
+      <div class="row"><i></i>技能库</div>
+      <div class="row"><i></i>设置</div>
+    </div>
+    <div class="top">
+      <div class="tab on">主画板</div><div class="tab">方案对比</div>
+      <div class="gap"></div><div class="zoom">100%</div>
+      <div class="btn">适应视图</div><div class="btn">导出</div>
+    </div>
+    <div class="cvs">
+      <div class="card" style="left:150px;top:110px;width:700px;height:467px;">
+        <img src="base.jpg" alt=""><span class="lab">图片 7 · 已选</span>
+      </div>
+
+      <div class="dock sm" style="left:60px;top:620px;">
+        <div class="hd">
+          <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.6V12l3.1 2"/></svg>
+          <b>时间迁移</b>
+          <div class="chips"><button class="chip on"><span>傍晚</span><svg viewBox="0 0 10 10"><path d="M2 4l3 3 3-3"/></svg></button></div>
+          <button class="x">×</button>
+        </div>
+        <div class="bd">
+          <div class="ref"><img src="base.jpg" alt=""><span class="num">1</span></div>
+          <textarea class="tx" placeholder="描述更多细节…（可不填）"></textarea>
+        </div>
+        <div class="ft"><span class="hint">派生 1 张 · 原图保留</span>
+          <button class="go">生成 <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+        </div>
+      </div>
+
+      <div class="dock" style="left:610px;top:530px;">
+        <div class="hd">
+          <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.6V12l3.1 2"/></svg>
+          <b>时间迁移</b>
+          <div class="chips"><button class="chip on"><span>傍晚</span><svg viewBox="0 0 10 10"><path d="M2 4l3 3 3-3"/></svg></button></div>
+          <button class="x">×</button>
+        </div>
+        <div class="bd">
+          <div class="ref"><img src="base.jpg" alt=""><span class="num">1</span></div>
+          <textarea class="tx full">把画面时间改为傍晚，黄金时刻，橙红侧光打在迎光面，投影拉长，室内暖灯刚亮起。只改变时段与由此带来的光色：太阳高度角与入射方向随之调整，天空颜色、环境光、投影长度与方向、材质受光与反射同步改变。建筑体量、物体位置、铺装分格、构图与机位完全不变。</textarea>
+        </div>
+        <div class="ft"><span class="hint">派生 1 张 · 原图保留</span>
+          <button class="ghost on">指令</button>
+          <button class="go">生成 <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ④ 两级下拉 -->
+<section class="stage">
+  <div class="cap"><i>04</i><b>两级分类 · 下拉里下钻</b><span>点「建筑类型」→「办公建筑」→ 7 个子类；chip 只显示最后一级</span></div>
+  <div class="app">
+    <div class="rail">
+      <div class="brand">无限画布 <em>v3.7</em></div>
+      <div class="sec">画板</div>
+      <div class="row on"><i></i>项目 A · 主画板</div>
+      <div class="row"><i></i>方案对比</div>
+      <div class="sec">工具</div>
+      <div class="row"><i></i>导入图片</div>
+      <div class="row"><i></i>技能库</div>
+      <div class="row"><i></i>设置</div>
+    </div>
+    <div class="top">
+      <div class="tab on">主画板</div><div class="tab">方案对比</div>
+      <div class="gap"></div><div class="zoom">100%</div>
+      <div class="btn">适应视图</div><div class="btn">导出</div>
+    </div>
+    <div class="cvs">
+      <div class="card" style="left:150px;top:100px;width:700px;height:467px;">
+        <img src="base.jpg" alt=""><span class="lab">图片 7 · 已选</span>
+      </div>
+      <div class="dock" style="left:300px;top:300px;">
+        <div class="hd">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></svg>
+          <b>建筑渲染</b>
+          <div class="chips">
+            <button class="chip on"><span>高层办公</span><svg viewBox="0 0 10 10"><path d="M2 4l3 3 3-3"/></svg></button>
+            <button class="chip"><span>时间</span><svg viewBox="0 0 10 10"><path d="M2 4l3 3 3-3"/></svg></button>
+          </div>
+          <button class="x">×</button>
+        </div>
+        <div class="bd">
+          <div class="ref"><img src="base.jpg" alt=""><span class="num">1</span></div>
+          <textarea class="tx" placeholder="描述更多细节…（可不填）"></textarea>
+        </div>
+        <div class="ft"><span class="hint">派生 1 张 · 原图保留</span>
+          <button class="ghost">指令</button>
+          <button class="go">生成 <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+        </div>
+        <div class="menu" style="left:64px;top:38px;box-shadow:0 26px 54px -18px rgba(0,0,0,.98);">
+          <div class="menu-h"><button>‹ 返回</button>办公建筑</div>
+          <button data-m><span>超高层办公</span></button>
+          <button data-m class="on"><span>高层办公</span></button>
+          <button data-m><span>多层办公</span><i>›</i></button>
+          <button data-m><span>总部园区</span><i>›</i></button>
+          <button data-m><span>研发办公</span><i>›</i></button>
+          <button data-m><span>联合办公</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ⑤ 技能抽屉合并 -->
+<section class="stage">
+  <div class="cap"><i>05</i><b>技能抽屉 · 三个页签</b><span>「渲染」页签取消，四条渲染技能排进通用最前；每条都有自己的一张预览图（此图为占位示意）</span></div>
+  <div class="app">
+    <div class="rail">
+      <div class="brand">无限画布 <em>v3.7</em></div>
+      <div class="sec">画板</div>
+      <div class="row on"><i></i>项目 A · 主画板</div>
+      <div class="row"><i></i>方案对比</div>
+      <div class="sec">工具</div>
+      <div class="row"><i></i>导入图片</div>
+      <div class="row"><i></i>技能库</div>
+      <div class="row"><i></i>设置</div>
+    </div>
+    <div class="top">
+      <div class="tab on">主画板</div><div class="tab">方案对比</div>
+      <div class="gap"></div><div class="zoom">100%</div>
+      <div class="btn">适应视图</div><div class="btn">导出</div>
+    </div>
+    <div class="cvs">
+      <div class="card" style="left:600px;top:70px;width:460px;height:307px;">
+        <img src="base.jpg" alt=""><span class="lab">图片 7 · 已选</span>
+      </div>
+      <div class="skpop" style="left:50px;top:110px;">
+        <div class="skp-top">
+          <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.4"/><path d="M16 16l4 4"/></svg>搜索技能…</div>
+          <button class="skp-x">×</button>
+        </div>
+        <div class="tabs"><button class="on">通用技能<b>14</b></button><button>专项技能<b>7</b></button><button>我的<b>0</b></button></div>
+        <div class="skp-body">
+          <div class="grid">
+            <button class="tile"><img src="base.jpg" style="filter:brightness(1.06) contrast(1.05)"><em>建筑渲染</em></button>
+            <button class="tile"><img src="base.jpg" style="filter:brightness(1.1) saturate(1.15)"><em>景观渲染</em></button>
+            <button class="tile"><img src="base.jpg" style="transform:scale(1.45) rotate(-6deg);filter:brightness(1.05)"><em>鸟瞰渲染</em></button>
+            <button class="tile"><img src="base.jpg" style="filter:grayscale(.8) contrast(1.2)"><em>手绘渲染</em></button>
+            <button class="tile"><img src="base.jpg" style="filter:brightness(.5) saturate(.7) hue-rotate(-10deg)"><em>夜景转换</em></button>
+            <button class="tile"><img src="base.jpg" style="filter:brightness(.72) saturate(.9) hue-rotate(-24deg)"><em>蓝调时刻</em></button>
+            <button class="tile"><img src="base.jpg" style="filter:sepia(.4) saturate(1.3)"><em>时间迁移</em></button>
+            <button class="tile"><img src="base.jpg" style="filter:hue-rotate(48deg) saturate(1.2)"><em>季节迁移</em></button>
+            <button class="tile"><img src="base.jpg" style="filter:saturate(.45) contrast(.92)"><em>画风迁移</em></button>
+            <button class="tile"><img src="base.jpg" style="filter:contrast(1.05)"><span class="lines"></span><em>场景分镜</em></button>
+            <button class="tile"><img src="base.jpg" style="filter:contrast(1.28) brightness(1.04)"><em>光影增强</em></button>
+            <button class="tile"><img src="base.jpg" style="filter:saturate(1.12) brightness(1.02)"><em>人物氛围</em></button>
+          </div>
+        </div>
+        <div class="skp-foot"><span>点技能 → 直接弹参数窗（原图保留，派生一张新的）</span><button>管理全部</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- 06 三种高度 -->
+<section class="stage">
+  <div class="cap"><i>06</i><b>同一个窗，三种高度</b><span>参数几个由技能数据决定：没有参数就只有一行标题 —— 不另开一种窗口</span></div>
+  <div class="app" style="height:610px;background:var(--paper);">
+    <div class="cvs" style="left:0;">
+      <div class="dock" style="left:60px;top:40px;width:400px;">
+        <div class="hd">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M12 3.6l2.2 5.4 5.8.5-4.4 3.8 1.3 5.7-4.9-3-4.9 3 1.3-5.7L4 9.5l5.8-.5z"/></svg>
+          <b>光影增强</b>
+          <div class="chips"></div>
+          <button class="x">×</button>
+        </div>
+        <div class="bd">
+          <div class="ref"><img src="base.jpg" alt=""><span class="num">1</span></div>
+          <textarea class="tx" placeholder="描述更多细节…（可不填）"></textarea>
+        </div>
+        <div class="ft"><span class="hint">派生 1 张 · 原图保留</span>
+          <button class="ghost">指令</button>
+          <button class="go">生成 <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+        </div>
+      </div>
+
+      <div class="dock" style="left:500px;top:40px;width:400px;">
+        <div class="hd">
+          <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.6V12l3.1 2"/></svg>
+          <b>时间迁移</b>
+          <div class="chips"><button class="chip on"><span>傍晚</span><svg viewBox="0 0 10 10"><path d="M2 4l3 3 3-3"/></svg></button></div>
+          <button class="x">×</button>
+        </div>
+        <div class="bd">
+          <div class="ref"><img src="base.jpg" alt=""><span class="num">1</span></div>
+          <textarea class="tx" placeholder="描述更多细节…（可不填）"></textarea>
+        </div>
+        <div class="ft"><span class="hint">派生 1 张 · 原图保留</span>
+          <button class="ghost">指令</button>
+          <button class="go">生成 <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+        </div>
+      </div>
+
+      <div class="dock" style="left:940px;top:40px;width:400px;">
+        <div class="hd">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></svg>
+          <b>建筑渲染</b>
+          <div class="chips">
+            <button class="chip on"><span>高层办公</span><svg viewBox="0 0 10 10"><path d="M2 4l3 3 3-3"/></svg></button>
+            <button class="chip on"><span>傍晚</span><svg viewBox="0 0 10 10"><path d="M2 4l3 3 3-3"/></svg></button>
+            <button class="chip on"><span>晴朗</span><svg viewBox="0 0 10 10"><path d="M2 4l3 3 3-3"/></svg></button>
+          </div>
+          <button class="x">×</button>
+        </div>
+        <div class="bd">
+          <div class="ref"><img src="base.jpg" alt=""><span class="num">1</span></div>
+          <textarea class="tx" placeholder="描述更多细节…（可不填）"></textarea>
+        </div>
+        <div class="ft"><span class="hint">派生 1 张 · 原图保留</span>
+          <button class="ghost">指令</button>
+          <button class="go">生成 <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+        </div>
+      </div>
+
+      <div style="position:absolute;left:60px;top:250px;font-size:11px;color:var(--faint);">0 个参数</div>
+      <div style="position:absolute;left:500px;top:250px;font-size:11px;color:var(--faint);">1 个参数 · chips 只占一行，不撑高</div>
+      <div style="position:absolute;left:940px;top:250px;font-size:11px;color:var(--faint);">3 个参数 · 仍是一行，挤不下用省略号</div>
+      <div style="position:absolute;left:60px;top:330px;font-size:11.5px;color:var(--ink3);">比例 / 分辨率 / 模型不另开窗：底部那行小字点开就是三个小下拉，默认收着。</div>
+      <div class="dock" style="left:60px;top:360px;width:520px;">
+        <div class="hd">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></svg>
+          <b>建筑渲染</b>
+          <div class="chips">
+            <button class="chip on"><span>高层办公</span><svg viewBox="0 0 10 10"><path d="M2 4l3 3 3-3"/></svg></button>
+            <button class="chip on"><span>傍晚</span><svg viewBox="0 0 10 10"><path d="M2 4l3 3 3-3"/></svg></button>
+          </div>
+          <button class="x">×</button>
+        </div>
+        <div class="bd">
+          <div class="ref"><img src="base.jpg" alt=""><span class="num">1</span></div>
+          <textarea class="tx" placeholder="描述更多细节…（可不填，例如：加强入口雨棚的暖光）"></textarea>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;padding:0 10px 8px;">
+          <span style="font-size:10px;color:var(--faint2);">比例</span>
+          <button class="chip"><span>跟随原图</span><svg viewBox="0 0 10 10"><path d="M2 4l3 3 3-3"/></svg></button>
+          <span style="font-size:10px;color:var(--faint2);">分辨率</span>
+          <button class="chip"><span>2K</span><svg viewBox="0 0 10 10"><path d="M2 4l3 3 3-3"/></svg></button>
+          <span style="font-size:10px;color:var(--faint2);">模型</span>
+          <button class="chip"><span>Seedream 5.0 Flash</span><svg viewBox="0 0 10 10"><path d="M2 4l3 3 3-3"/></svg></button>
+        </div>
+        <div class="ft"><span class="hint">派生 1 张 · 原图保留</span>
+          <button class="ghost on">设置</button>
+          <button class="go">生成 <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+        </div>
+      </div>
+
+      <div style="position:absolute;left:640px;top:360px;font-size:11.5px;color:var(--ink3);line-height:1.9;">
+        统一要点：① 三个参数和零个参数在版式上是同一套骨架，只是 chips 那一格空着；<br>
+        ② 下拉换值只改 chip 文字，窗不重排、不跳位置；③ 生成按钮永远在右下同一个位置，肌肉记忆一致。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ⑦ 对照 -->
+<section class="stage">
+  <div class="cap"><i>06</i><b>改造前后</b><span>左边四种窗口各有各的样式与出口，右边合成一种</span></div>
+  <div class="cmp">
+    <h3>现状：一个技能要过四道窗，长得都不一样</h3>
+    <div class="row2">
+      <div class="col">
+        <div class="box dead"><b><u>1</u>技能抽屉</b><p>3×N 网格，无说明文字；点一下才往下走</p></div>
+        <div class="box dead"><b><u>2</u>纯文字菜单</b><p>「时间迁移 · 选一个」一列字，没有缩略图、没有描述、没有生成按钮</p></div>
+        <div class="box dead"><b><u>3</u>编辑面板</b><p>整块浮在卡片下，占掉半屏；指令灌进大文本框，还得再点一次箭头</p></div>
+        <div class="box dead"><b><u>4</u>渲染工作台</b><p>另一套样式（430px 小窗 + 下拉 + 缩略图），只有 4 条技能享受</p></div>
+      </div>
+      <div class="arw"></div>
+      <div class="box new" style="width:250px;align-self:stretch;justify-content:center;">
+        <b><u>1</u>技能工作台</b>
+        <p>一个窗、一份 schema。标题 + N 个下拉 + 缩略图 + 描述 + 生成；没参数的技能只是矮一点</p>
+      </div>
+    </div>
+    <h3 style="margin-top:6px;">统一后的规则</h3>
+    <div class="col">
+      <div class="box"><b>① 入口一致</b><p>抽屉里点任意技能，弹的都是同一个窗</p></div>
+      <div class="box"><b>② 参数由 schema 生成</b><p>几个下拉、下钻几级、选项文案，全写在技能数据里</p></div>
+      <div class="box"><b>③ 出口一致</b><p>窗里点「生成」→ 派生新卡、原图保留，不再回编辑面板</p></div>
+      <div class="box"><b>④ 想改字也能改</b><p>「指令」就地展开完整提示词，改成什么样就发什么样</p></div>
+      <div class="box"><b>⑤ 预览图一致</b><p>每条技能一张真跑出来的效果图，不再有纯图标卡片</p></div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

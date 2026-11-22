@@ -1,0 +1,54 @@
+# ---- 密钥与本机配置（绝对不能进仓库）----
+.env
+.env.*
+*.env
+.key-backups/
+proto/.env
+proto/.env.*
+
+# ---- 构建产物 ----
+proto/dist/
+proto/build/
+proto/dist-onefile-prev/
+installer/build/
+build_js_check.tmp
+*.spec.bak
+*.bak-*
+proto/*.bak-*
+
+# ---- 依赖 / 运行杂项 ----
+tools/node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.log
+*.bak.html
+
+# ---- 大体积素材 / 历史归档 ----
+归档/
+截图/
+demo-v37/
+assets/skill-art/
+mock/shots*/
+mock/real/
+mock/*.png
+*.mp4
+*.mov
+
+# ---- 内部文档：不进公开仓库（只放代码）----
+运行报告-*.md
+方案-*.md
+优化方案-*.md
+模型接入方案-*.md
+无边框窗口方案.md
+闭源化与性能优化方案.md
+代码审查报告-*.md
+修复与评审报告.md
+D5 Arco *.md
+
+# ---- 编辑器 / 系统 ----
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store

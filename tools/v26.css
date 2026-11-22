@@ -1,0 +1,263 @@
+/* ==== V26-CSS-START ==== */
+/* ---------- v2.6 · AI 局部重绘工作台 ---------- */
+#snc .snc-inp-scrim{position:absolute; inset:0; z-index:68; background:rgba(8,9,11,.58);}
+#snc .snc-inp{
+  position:absolute; inset:12px; z-index:70; display:flex; background:var(--paper);
+  color:var(--ink); font:13px/1.5 "PingFang SC","Microsoft YaHei",sans-serif;
+  border-radius:12px; overflow:hidden; box-shadow:0 18px 60px rgba(0,0,0,.42);
+  animation:sncInpIn .22s ease-out both;
+}
+@keyframes sncInpIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+#snc .snc-inp[hidden], #snc .snc-inp-scrim[hidden]{display:none;}
+#snc .snc-inp-main{flex:1; min-width:0; display:flex; flex-direction:column;}
+#snc .snc-inp-head{
+  height:54px; flex:0 0 54px; display:flex; align-items:center; gap:12px;
+  padding:0 18px; border-bottom:1px solid var(--line); background:var(--card);
+}
+#snc .snc-inp-head b{font-size:15px; font-weight:650; letter-spacing:.2px;}
+#snc .snc-inp-hint{font-size:11.5px; color:var(--muted);}
+#snc .snc-inp-head .snc-inp-mini{
+  margin-left:auto; padding:5px 10px; border-radius:7px; border:1px solid var(--line2);
+  background:var(--raise); color:var(--ink2); font-size:11.5px; cursor:pointer;
+}
+#snc .snc-inp-head .snc-inp-mini:hover{border-color:var(--accent); color:var(--ink);}
+#snc .snc-inp-canvas{
+  flex:1; min-height:0; position:relative; overflow:hidden; display:grid; place-items:center;
+  background:
+    linear-gradient(45deg, var(--raise) 25%, transparent 25%, transparent 75%, var(--raise) 75%),
+    linear-gradient(45deg, var(--raise) 25%, transparent 25%, transparent 75%, var(--raise) 75%),
+    var(--card);
+  background-size:22px 22px; background-position:0 0, 11px 11px;
+}
+#snc .snc-inp-wrap{position:relative; transform-origin:center center; box-shadow:0 12px 42px rgba(0,0,0,.35);}
+#snc .snc-inp-wrap img{display:block; max-width:none; user-select:none; -webkit-user-drag:none;}
+#snc .snc-inp-mask{position:absolute; inset:0; cursor:crosshair; touch-action:none;}
+#snc .snc-inp-wrap.is-pan .snc-inp-mask{cursor:grab;}
+#snc .snc-inp-wrap.is-nav .snc-inp-mask{cursor:default; pointer-events:none;}
+#snc .snc-inp-empty{
+  position:absolute; inset:0; display:grid; place-items:center; color:var(--muted);
+  font-size:12.5px; pointer-events:none;
+}
+#snc .snc-inp-tools{
+  height:60px; flex:0 0 60px; display:flex; align-items:center; justify-content:center;
+  gap:5px; padding:0 14px; border-top:1px solid var(--line); background:var(--card);
+}
+#snc .snc-inp-tools button{
+  height:32px; min-width:32px; padding:0 10px; border-radius:8px; border:1px solid var(--line2);
+  background:var(--raise); color:var(--ink2); font-size:11.5px; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; gap:5px;
+}
+#snc .snc-inp-tools button:hover{border-color:var(--accent); color:var(--ink);}
+#snc .snc-inp-tools button.is-on{background:var(--accent); border-color:var(--accent); color:#fff;}
+#snc .snc-inp-tools .snc-inp-zoom{min-width:52px; text-align:center; font-size:11.5px; color:var(--muted);}
+#snc .snc-inp-tools .snc-inp-sep{width:1px; height:20px; background:var(--line2); margin:0 4px;}
+#snc .snc-inp-side{
+  width:318px; flex:0 0 318px; border-left:1px solid var(--line); background:var(--card);
+  overflow-y:auto; padding:58px 18px 18px; position:relative;
+}
+/* 关闭按钮挂在整块工作台的右上角（不是侧栏里），侧栏顶部留 58px 给它，
+   既不会被裁到窗外，也不会压住「生成分辨率」标题 */
+#snc .snc-inp-x{
+  position:absolute; right:14px; top:14px; width:32px; height:32px; border-radius:50%;
+  border:1px solid var(--line2); background:var(--raise); color:var(--ink2);
+  font-size:19px; line-height:1; cursor:pointer; z-index:8; box-shadow:0 3px 12px rgba(0,0,0,.28);
+  display:grid; place-items:center; padding:0;
+}
+#snc .snc-inp-x:hover{color:var(--ink); border-color:var(--accent); background:var(--card);}
+#snc .snc-inp-sec{margin-bottom:16px;}
+/* 描述重绘时整块藏起来：`.snc-inp-sec` 没写 display，但保险起见显式压一下 hidden */
+#snc .snc-inp-sec[hidden]{display:none;}
+#snc .snc-inp-note{margin:7px 0 0; font-size:10.5px; color:var(--muted); line-height:1.55;}
+#snc .snc-inp-sec > h4{margin:0 0 9px; font-size:12.5px; font-weight:650; color:var(--ink);}
+#snc .snc-inp-chips{display:flex; flex-wrap:wrap; gap:7px;}
+#snc .snc-inp-chips button{
+  min-width:64px; padding:7px 10px; border-radius:9px; border:1px solid var(--line2);
+  background:var(--raise); color:var(--ink2); font-size:11.5px; cursor:pointer; white-space:nowrap;
+}
+#snc .snc-inp-chips button:hover{border-color:var(--accent);}
+#snc .snc-inp-chips button.is-on{background:var(--ink); border-color:var(--ink); color:var(--paper); font-weight:600;}
+/* 建立选区 5 个工具挤在一行（原来 64px 最小宽会把「识别」挤到第二行） */
+#snc .snc-inp-chips[data-group="tool"] button,
+#snc .snc-inp-chips[data-group="mode"] button{min-width:0; flex:1 1 0; padding:7px 2px; text-align:center;}
+#snc .snc-inp-chips button i{font-style:normal; font-size:9.5px; color:var(--accent); margin-left:3px;}
+#snc .snc-inp-chips button.is-on i{color:var(--paper); opacity:.75;}
+#snc .snc-inp-row{display:flex; align-items:center; gap:7px; margin-top:9px; flex-wrap:wrap;}
+#snc .snc-inp-row > span{font-size:11px; color:var(--muted);}
+#snc .snc-inp-row button{
+  padding:5px 9px; border-radius:7px; border:1px solid var(--line2); background:var(--raise);
+  color:var(--ink2); font-size:11px; cursor:pointer;
+}
+#snc .snc-inp-row button:hover{border-color:var(--accent); color:var(--ink);}
+/* 笔刷大小滑杆：以前只有「笔刷 −/＋」两个按钮，点半天也不知道笔尖多大 */
+#snc .snc-inp-brushrow{gap:9px; margin-top:10px;}
+#snc .snc-inp-brushlab{font-size:11px; color:var(--muted); flex:0 0 auto;}
+#snc .snc-inp-brushrow input[type="range"]{
+  flex:1 1 96px; min-width:80px; height:18px; margin:0; padding:0; cursor:pointer;
+  accent-color:var(--accent); background:transparent;
+}
+#snc .snc-inp-brushv{
+  flex:0 0 auto; min-width:38px; text-align:right; font-size:11px; font-weight:600;
+  color:var(--ink); font-variant-numeric:tabular-nums;
+}
+#snc .snc-inp-toolrow{margin-top:6px;}
+#snc .snc-inp-toolrow > span{font-size:10.5px; color:var(--muted);}
+#snc .snc-inp-grow{margin-bottom:10px;}
+#snc .snc-inp-prompt{
+  width:100%; box-sizing:border-box; min-height:92px; padding:10px 11px; border-radius:9px;
+  background:var(--raise); border:1px solid var(--line2); color:var(--ink);
+  font:12.5px/1.6 "PingFang SC","Microsoft YaHei",sans-serif; resize:vertical;
+}
+#snc .snc-inp-prompt:focus{outline:none; border-color:var(--accent);}
+#snc .snc-inp-go{
+  width:100%; height:44px; border:0; border-radius:10px; background:var(--ink); color:var(--paper);
+  font-size:13.5px; font-weight:650; cursor:pointer; letter-spacing:.5px;
+}
+#snc .snc-inp-go:hover{filter:brightness(1.12);}
+#snc .snc-inp-go[disabled]{opacity:.45; cursor:not-allowed;}
+#snc .snc-inp-tip{margin:8px 0 0; font-size:10.5px; color:var(--muted); line-height:1.6;}
+#snc .snc-inp-navtip{font-size:10px; color:var(--muted); letter-spacing:.2px;}
+/* 生成描述的参考图：缩略图 + 添加按钮，最多 3 张 */
+#snc .snc-inp-refrow{gap:8px; margin-top:9px; align-items:flex-start;}
+#snc .snc-inp-refs{display:flex; flex-wrap:wrap; gap:6px; flex:1 1 auto; min-height:0;}
+#snc .snc-inp-ref{
+  position:relative; width:40px; height:40px; border-radius:7px; overflow:hidden;
+  border:1px solid var(--line2); background:var(--raise);
+}
+#snc .snc-inp-ref img{width:100%; height:100%; object-fit:cover; display:block;}
+#snc .snc-inp-ref button{
+  position:absolute; right:1px; top:1px; width:15px; height:15px; padding:0; border:0;
+  border-radius:50%; background:rgba(10,11,13,.78); color:#fff; font-size:11px; line-height:1;
+  cursor:pointer; display:grid; place-items:center;
+}
+#snc .snc-inp-ref button:hover{background:var(--accent);}
+#snc .snc-inp-refadd{
+  flex:0 0 auto; padding:6px 10px; border-radius:7px; border:1px dashed var(--line2);
+  background:var(--raise); color:var(--ink2); font-size:11px; cursor:pointer;
+}
+#snc .snc-inp-refadd:hover{border-color:var(--accent); color:var(--ink);}
+#snc .snc-inp-refadd:disabled{opacity:.45; cursor:not-allowed;}
+
+/* ---------- v2.6 · B4 小地图 / 整理画布 / 图层 ---------- */
+#snc .snc-mini{
+  position:absolute; right:14px; bottom:calc(var(--prompt-h) + 62px); width:190px; height:132px; z-index:22;
+  border-radius:10px; border:1px solid var(--line2); background:var(--card);
+  box-shadow:0 6px 22px rgba(0,0,0,.28); overflow:hidden; cursor:crosshair;
+}
+#snc .snc-mini[hidden]{display:none;}
+#snc .snc-mini canvas{display:block; width:100%; height:100%;}
+#snc .snc-mini-cap{
+  position:absolute; left:7px; top:5px; font-size:10px; color:var(--muted);
+  pointer-events:none; letter-spacing:.4px;
+}
+#snc .snc-mini-x{
+  position:absolute; right:4px; top:3px; width:18px; height:18px; border:0; border-radius:5px;
+  background:transparent; color:var(--muted); font-size:14px; cursor:pointer; line-height:1;
+}
+#snc .snc-mini-x:hover{color:var(--ink); background:var(--raise);}
+#snc .snc-layers{
+  position:absolute; left:calc(var(--rail) + 14px); bottom:calc(var(--prompt-h) + 62px);
+  width:252px; max-height:420px; z-index:23;
+  border-radius:10px; border:1px solid var(--line2); background:var(--card);
+  box-shadow:0 6px 22px rgba(0,0,0,.28); display:flex; flex-direction:column; overflow:hidden;
+}
+#snc .snc-layers[hidden]{display:none;}
+#snc .snc-layers-h{
+  display:flex; align-items:center; gap:6px; padding:8px 10px; border-bottom:1px solid var(--line2);
+  font-size:11.5px; font-weight:650; color:var(--ink);
+}
+#snc .snc-layers-h .snc-layers-n{font-style:normal; font-weight:400; font-size:10px; color:var(--muted); margin-left:auto;}
+#snc .snc-layers-h button{
+  border:0; background:transparent; color:var(--muted); font-size:14px; cursor:pointer; line-height:1;
+}
+/* 工具行：成组 / 解组 / 全部显示 —— 参考 PS 图层面板顶部的按钮组 */
+#snc .snc-layers-tools{display:flex; gap:5px; padding:6px 8px; border-bottom:1px solid var(--line2);}
+#snc .snc-layers-tools button{
+  flex:1 1 auto; padding:4px 6px; border-radius:5px; border:1px solid var(--line2);
+  background:var(--raise); color:var(--ink2); font-size:10px; cursor:pointer; white-space:nowrap;
+}
+#snc .snc-layers-tools button:hover{border-color:var(--accent); color:var(--ink);}
+#snc .snc-layer-row.is-hidden{opacity:.55;}
+#snc .snc-layer-row.is-hidden .snc-layer-t{text-decoration:line-through;}
+#snc .snc-layers-b{overflow-y:auto; padding:4px 5px 2px; flex:1 1 auto;}
+#snc .snc-layers-g{
+  font-size:9.5px; color:var(--muted); padding:6px 6px 3px; letter-spacing:.4px;
+  display:flex; align-items:center; gap:5px;
+}
+#snc .snc-layers-g:after{content:""; flex:1 1 auto; height:1px; background:var(--line2);}
+#snc .snc-layer-row{
+  display:flex; align-items:center; gap:6px; padding:4px 5px; border-radius:5px;
+  font-size:11px; color:var(--ink2); cursor:pointer; position:relative;
+}
+#snc .snc-layer-row:hover{background:var(--raise); color:var(--ink);}
+#snc .snc-layer-row.is-on{background:var(--accent-soft); color:var(--ink);}
+#snc .snc-layer-row .snc-layer-t{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+#snc .snc-layer-row.is-grp{font-weight:650;}
+/* 组内成员缩进，前面拉一条竖线（PS 的层级感） */
+#snc .snc-layer-row.is-kid{margin-left:13px;}
+#snc .snc-layer-row.is-kid:before{
+  content:""; position:absolute; left:-7px; top:1px; bottom:1px; width:1px; background:var(--line2);
+}
+/* 眼睛：可见=睁眼，隐藏=闭眼+斜线；平时半透明，悬停才亮起来（PS 的手感） */
+#snc .snc-layer-eye{
+  flex:0 0 17px; width:17px; height:17px; padding:0; border:0; background:transparent;
+  color:var(--ink2); opacity:.66; cursor:pointer; display:grid; place-items:center;
+}
+#snc .snc-layer-row:hover .snc-layer-eye,
+#snc .snc-layer-row.is-hidden .snc-layer-eye{opacity:1;}
+#snc .snc-layer-eye:hover{color:var(--ink);}
+#snc .snc-layer-eye svg{width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.7;
+  stroke-linecap:round; stroke-linejoin:round; overflow:visible;}
+#snc .snc-layer-eye.is-off{color:var(--faint);}
+#snc .snc-layer-twist{
+  flex:0 0 10px; width:10px; height:14px; padding:0; border:0; background:transparent;
+  color:var(--muted); cursor:pointer; font-size:8px; line-height:1;
+}
+/* 组名：双击改名（也可点行尾小笔），改完写回组内所有成员的 grpName */
+#snc .snc-layer-num{flex:none; font-style:normal; font-weight:400; font-size:9.5px; color:var(--muted);}
+#snc .snc-layer-edit{
+  flex:0 0 14px; width:14px; height:14px; padding:0; border:0; background:transparent;
+  color:var(--muted); opacity:0; cursor:pointer; display:grid; place-items:center;
+  transition:opacity .12s;
+}
+#snc .snc-layer-row.is-grp:hover .snc-layer-edit{opacity:.75;}
+#snc .snc-layer-edit:hover{opacity:1; color:var(--ink);}
+#snc .snc-layer-edit svg{
+  width:11px; height:11px; fill:none; stroke:currentColor; stroke-width:1.6;
+  stroke-linecap:round; stroke-linejoin:round;
+}
+#snc .snc-layer-input{
+  flex:1 1 auto; min-width:0; height:18px; padding:0 4px; border-radius:4px;
+  border:1px solid var(--accent); background:var(--raise); color:var(--ink);
+  font-family:inherit; font-size:11px; font-weight:650; outline:none;
+}
+#snc .snc-layer-row.is-drop-before{box-shadow:inset 0 2px 0 var(--accent);}
+#snc .snc-layer-row.is-drop-after{box-shadow:inset 0 -2px 0 var(--accent);}
+#snc .snc-layer-row.is-drop-into{box-shadow:inset 0 0 0 1.5px var(--accent); background:var(--accent-soft);}
+#snc .snc-layers-tip{
+  margin:0; padding:5px 9px 7px; font-size:9.5px; color:var(--faint); line-height:1.5;
+  border-top:1px solid var(--line2);
+}
+#snc .snc-toolbtn{
+  padding:6px 10px; border-radius:8px; border:1px solid var(--line2); background:var(--card);
+  color:var(--ink2); font-size:11.5px; cursor:pointer; white-space:nowrap;
+}
+#snc .snc-toolbtn:hover{border-color:var(--accent); color:var(--ink);}
+
+/* ---------- v2.6 · 关于页工程工具 ---------- */
+#snc .snc-about-tools{display:flex; flex-wrap:wrap; gap:7px; margin:10px 0 4px;}
+#snc .snc-about-tools button{
+  padding:6px 10px; border-radius:8px; border:1px solid var(--line2);
+  background:var(--raise); color:var(--ink2); font-size:11.5px; cursor:pointer;
+}
+#snc .snc-about-tools button:hover{border-color:var(--accent); color:var(--ink);}
+#snc .snc-about-out{
+  margin:8px 0 0; padding:8px 10px; border-radius:8px; background:var(--raise);
+  border:1px solid var(--line2); font-size:11px; color:var(--ink2);
+  white-space:pre-wrap; max-height:170px; overflow:auto; line-height:1.65;
+}
+#snc .snc-about-out[hidden]{display:none;}
+#snc .snc-splash-status{
+  margin-top:12px; font-size:11px; color:var(--muted); min-height:16px; text-align:center;
+}
+#snc .snc-splash-status.is-err{color:#e0603a;}
+/* ==== V26-CSS-END ==== */
