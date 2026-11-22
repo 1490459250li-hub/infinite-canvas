@@ -279,7 +279,7 @@ html.snc-shell #sncWinFrame.is-max .snc-edge{ display:none; }
 }
 #snc .snc-node.is-sel{box-shadow:0 0 0 2px var(--accent);}
 #snc .snc-node.is-sel .snc-node-label{color:var(--accent);}
-#snc .snc-node-body{position:absolute; inset:0; overflow:hidden; border-radius:12px;}
+#snc .snc-node-body{position:absolute; inset:0; overflow:hidden; border-radius:14px;}
 #snc .snc-node[data-type="gen"] .snc-node-body{box-shadow:0 10px 30px -14px rgba(0,0,0,.85);}
 #snc .snc-node-body svg{display:block; width:100%; height:100%;}
 
@@ -320,7 +320,7 @@ html.snc-shell #sncWinFrame.is-max .snc-edge{ display:none; }
    setGenProgress 读真实圆角与描边宽，按 r = R - inset 画同心路径（见下方注释）。 */
 #snc .snc-prog-ring{
   position:absolute; inset:0; width:100%; height:100%;
-  z-index:3; pointer-events:none;
+  z-index:8; pointer-events:none;
 }
 #snc .snc-prog-ring path{
   fill:none; stroke:var(--accent); stroke-width:2;
@@ -331,30 +331,23 @@ html.snc-shell #sncWinFrame.is-max .snc-edge{ display:none; }
 /* v3.7.7 · 方案 B 的「不确定环」虚线跑马灯已被 v3.8.6 彗星流光环取代（ai.html 方案二）。
    v3.8.11：删掉这里的 stroke-dasharray:18 14 !important —— 它的 !important 会盖掉
    JS 按真实周长算出的 28% 彗星长度，环会退化成整圈小虚线，且看不到拖尾。 */
+/* 左上角阶段徽标：1:1 对照 ai.html 的 .ring-label-badge
+   （10.5px / padding 3px 9px / 深色 .74 底 + 1px 半透明描边 / 左上各 10px） */
 #snc .snc-prog-pct{
-  position:absolute; left:9px; top:9px; z-index:4; pointer-events:none;
-  font-size:10.5px; line-height:1; padding:5px 8px; border-radius:999px;
-  background:rgba(10,11,13,.72); color:#fff; letter-spacing:.2px;
+  position:absolute; left:10px; top:10px; z-index:9; pointer-events:none;
+  font-size:10.5px; line-height:1.25; padding:3px 9px; border-radius:999px;
+  background:rgba(12,14,19,.74); color:#fff; letter-spacing:0;
+  border:1px solid rgba(255,255,255,.12);
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
   font-variant-numeric:tabular-nums;
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+  transition:opacity .3s ease;
 }
-html[data-boot="light"] #snc .snc-prog-pct{background:rgba(255,255,255,.86); color:#241f1c;}
-#snc .snc-gen-wait{
-  flex:1; position:relative; display:flex; flex-direction:column; justify-content:center;
-  align-items:center; gap:14px; padding:20px;
-  background:var(--panel); box-shadow:inset 0 0 0 1px var(--hover);
+html[data-boot="light"] #snc .snc-prog-pct{
+  background:rgba(255,255,255,.88); color:#1b1c22;
+  border-color:rgba(28,28,34,.12);
 }
-#snc .snc-gen-wait::before{
-  content:""; position:absolute; inset:0; opacity:.5;
-  background:linear-gradient(100deg, transparent 20%, rgba(255,255,255,.055) 48%, transparent 76%);
-  background-size:220% 100%; animation:sncShimmer 2.2s linear infinite;
-}
-@keyframes sncShimmer{from{background-position:120% 0}to{background-position:-60% 0}}
-#snc .snc-gen-q{
-  position:relative; max-width:100%; font-size:11.5px; color:var(--muted); text-align:center;
-  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
-}
-#snc .snc-gen-meta{position:relative; font-size:10.5px; color:var(--faint); font-variant-numeric:tabular-nums;}
+/* 生成中卡片的容器 / 提示词 / 元信息统一在下方「卡片内部」一段定义，
+   这里不再重复（旧版是 flex 竖排 + 扫光，已按 ai.html 换成绝对铺满 + 光斑）。 */
 #snc .snc-gen-img{position:absolute; inset:0;}
 /* 以前这里还有 .snc-gen-tag（成品图底部那条渐变压字），v3.5.2 起不再渲染，
    样式一并删掉。提示词改在工具条「记录」面板里看。 */
@@ -2737,35 +2730,51 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
   to{ stroke-dashoffset:calc(var(--snc-perim, 600) * -1); }
 }
 
-/* 卡片内部：原图潜影 + 柔光光斑 + 磨砂阶段胶囊 */
+/* 卡片内部：原图潜影 + 柔光光斑 + 磨砂阶段胶囊
+   v3.8.13：整块按 ai.html 的 .gen-visual / .gen-latent / .gen-mesh / .gen-center 逐值照抄。
+   之前的实现散成三块（wait 容器 + 底部行 + 独立 prompt 行），间距和字号都是自己估的，
+   视觉上就"完全不一样"。现在改为一个居中的 .snc-gen-center 竖列，gap 固定 10px。 */
 #snc .snc-gen-wait{
-  overflow:hidden;
+  position:absolute; inset:0; overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
   background:var(--card);
 }
-#snc .snc-gen-wait::before{ opacity:.22; }
+/* 原图潜影：inset -12 / blur 22 saturate 1.2 / 默认隐，按阶段点亮（排队 .14 → 已提交 .20 → 渲染中 .28 带呼吸） */
 #snc .snc-gen-latent{
-  position:absolute; inset:-14px; width:calc(100% + 28px); height:calc(100% + 28px);
+  position:absolute; inset:-12px; width:calc(100% + 24px); height:calc(100% + 24px);
   object-fit:cover; filter:blur(22px) saturate(1.2);
-  opacity:.24; transform:scale(1.06); pointer-events:none;
-  animation:sncLatentBreath 3.4s ease-in-out infinite;
+  opacity:0; transform:scale(1.06); pointer-events:none;
+  transition:opacity .55s ease, filter .55s ease;
 }
 @keyframes sncLatentBreath{
-  0%,100%{ transform:scale(1.06); opacity:.20; }
-  50%{ transform:scale(1.10); opacity:.30; }
+  0%,100%{ transform:scale(1.06); filter:blur(22px) saturate(1.15); }
+  50%{ transform:scale(1.10); filter:blur(18px) saturate(1.35); }
 }
+/* 柔光光斑：只在「已提交 / 渲染中」出现，5s 缓慢漂移 */
 #snc .snc-gen-mesh{
-  position:absolute; inset:0; pointer-events:none;
+  position:absolute; inset:0; opacity:0; pointer-events:none;
+  transition:opacity .4s ease;
   background:
-    radial-gradient(circle at 28% 34%, var(--accent-soft), transparent 58%),
-    radial-gradient(circle at 76% 68%, var(--accent-wash), transparent 56%);
-  animation:sncMeshDrift 4.8s ease-in-out infinite alternate;
+    radial-gradient(circle at 28% 35%, var(--accent-soft), transparent 58%),
+    radial-gradient(circle at 75% 68%, rgba(160,120,255,.14), transparent 56%);
+}
+#snc .snc-gen.is-submitted .snc-gen-mesh,
+#snc .snc-gen.is-waiting .snc-gen-mesh{
+  opacity:1;
+  animation:sncMeshDrift 5s ease-in-out infinite alternate;
 }
 @keyframes sncMeshDrift{
   from{ transform:translate(-3%,-2%) scale(1); }
   to{ transform:translate(3%,2%) scale(1.06); }
 }
+/* 内容列：胶囊 → 提示词两行 → (模型 · 分辨率 · 用时 + 取消)，整体垂直居中 */
+#snc .snc-gen-center{
+  position:absolute; inset:0; z-index:3;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:10px; padding:20px 26px; text-align:center;
+}
 #snc .snc-gen-stagepill{
-  position:relative; z-index:2;
+  position:relative; z-index:2; flex:none;
   display:inline-flex; align-items:center; gap:7px;
   padding:5px 12px; border-radius:999px;
   font-size:11.5px; font-weight:500; line-height:1.25;
@@ -2783,8 +2792,9 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
 }
 #snc .snc-gen-dot{
   width:7px; height:7px; border-radius:50%;
-  background:var(--accent); box-shadow:0 0 8px var(--accent-glow);
+  background:var(--accent); box-shadow:0 0 8px var(--accent);
   animation:sncDotPulse 1.3s ease-in-out infinite;
+  flex:none;
 }
 @keyframes sncDotPulse{
   0%,100%{ transform:scale(.82); opacity:.55; }
@@ -2861,19 +2871,18 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
   50%{ box-shadow:inset 0 0 92px -2px var(--accent-glow); }
 }
 
-/* 2. AI 生成中卡片 1:1 对齐预览图：防文字裁切、清晰层级、卡内取消按钮 */
-#snc .snc-gen-wait{
-  gap:10px; padding:34px 18px 16px;
-}
+/* 2. 提示词 / 元信息 / 取消：与 ai.html 的 .gen-prompt-preview / .gen-submeta / .gen-cancel-chip 一致
+   （12px 两行居中、11px 等宽 meta、10.5px 小药丸取消按钮，三者同列 gap 10） */
 #snc .snc-gen-q{
   position:relative; z-index:2;
-  font-size:12px; line-height:1.5; color:var(--ink2); max-width:92%;
-  -webkit-line-clamp:2; max-height:calc(1.5em * 2);
+  margin:0; font-size:12px; line-height:1.5; color:var(--ink2);
+  max-width:92%; word-break:break-word;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  overflow:hidden;
 }
 #snc .snc-gen-subrow{
   position:relative; z-index:2;
-  display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;
-  margin-top:2px;
+  display:flex; align-items:center; justify-content:center; gap:10px;
 }
 #snc .snc-gen-subrow .snc-gen-meta{
   font-family:ui-monospace,"JetBrains Mono",Consolas,monospace;
@@ -2881,7 +2890,8 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
 }
 #snc .snc-gen-cancel{
   border:1px solid var(--line2); background:var(--raise); color:var(--ink2);
-  font-size:10.5px; line-height:1.2; padding:2px 9px; border-radius:999px;
+  font:inherit; font-family:inherit; font-size:10.5px; line-height:1.4;
+  padding:2px 9px; border-radius:999px;
   cursor:pointer; transition:border-color .15s, color .15s, background .15s;
 }
 #snc .snc-gen-cancel:hover{
@@ -2911,7 +2921,7 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
 /* 原图潜影按阶段递进：排队 .14 → 已提交 .20 → 渲染中 .28（带呼吸，见 sncLatentBreath） */
 #snc .snc-gen.is-queued .snc-gen-latent{ opacity:.14; animation:none; }
 #snc .snc-gen.is-submitted .snc-gen-latent{ opacity:.20; animation:none; }
-#snc .snc-gen.is-waiting .snc-gen-latent{ opacity:.28; }
+#snc .snc-gen.is-waiting .snc-gen-latent{ opacity:.28; animation:sncLatentBreath 3.2s ease-in-out infinite; }
 </style>
 </head>
 <body>
@@ -4412,14 +4422,14 @@ var root = document.getElementById("snc");
         host.style.cssText = "position:fixed;left:-9999px;top:0;width:240px;height:160px;";
         host.innerHTML = '<svg class="snc-prog-ring" viewBox="0 0 100 100" aria-hidden="true">' +
           '<path d="M50 1 H89 A10 10 0 0 1 99 11 V89 A10 10 0 0 1 89 99 H11 A10 10 0 0 1 1 89 V11 A10 10 0 0 1 11 1 H50"></path></svg>' +
-          '<span class="snc-prog-pct">0%</span>';
+          '<span class="snc-prog-pct">排队中</span>';
         (document.getElementById("snc") || document.body).appendChild(host);
       }
       setGenProgress(host, pct);
       var path = host.querySelector("path"), svg = host.querySelector("svg");
       var P = Number(path.dataset.perimeter || 0);
       var off = parseFloat(path.style.strokeDashoffset);
-      return {pct: pct, badge: host.querySelector(".snc-prog-pct").textContent,
+      return {pct: pct,
               viewBox: svg.getAttribute("viewBox"), d: path.getAttribute("d"),
               perimeter: P, dasharray: path.style.strokeDasharray,
               dashoffset: off, drawn: P ? P - off : 0};
@@ -5557,11 +5567,13 @@ var root = document.getElementById("snc");
       var bodyCs = cs(host.querySelector(".snc-node-body")) || cs(host);
       var R = num(bodyCs && bodyCs.borderTopLeftRadius, 12);
       R = Math.max(R, num((cs(ring.parentNode) || {}).borderTopLeftRadius, 0));
-      var sw = num((cs(path) || {}).strokeWidth, 2.4);
+      var sw = num((cs(path) || {}).strokeWidth, 2.5);
       var f = function(v){ return Number(v).toFixed(2); };
-      var inset = sw / 2 + 1;
+      /* v3.8.13：与 ai.html 的 `const inset = 1.5; const r = Math.max(2, R - inset)` 一致。
+         之前用 sw/2+1（=2.25）向内缩，环离卡片边差了 0.75px，四个角看着不贴边。 */
+      var inset = 1.5;
       var x0 = inset, y0 = inset, x1 = W - inset, y1 = H - inset, mid = W / 2;
-      var r = Math.max(0, Math.min(R - inset, (Math.min(W, H) - 2 * inset) / 2));
+      var r = Math.max(2, Math.min(R - inset, (Math.min(W, H) - 2 * inset) / 2));
       r = Number(r.toFixed(2));
       var a = r ? " A" + f(r) + " " + f(r) + " 0 0 1 " : "";
       var dStr = "M" + f(mid) + " " + f(y0) +
@@ -5588,8 +5600,7 @@ var root = document.getElementById("snc");
       path.dataset.rw = W;
       path.dataset.rh = H;
     }
-    var badge = host.querySelector(".snc-prog-pct");
-    if(badge) badge.textContent = Math.round(pct) + "%";
+    /* v3.8.13：徽标改为「阶段 · 用时」（见 syncTimeUI），不再显示假百分比 */
   }
 
   /* v3.8.9 · 60fps 彗星流光环 rAF 引擎（与 ai.html 一致，无生成任务时自动停转） */
@@ -5669,31 +5680,36 @@ var root = document.getElementById("snc");
       var rLabel = n.res ? (n.res >= 4000 ? "4K" : (n.res >= 2000 ? "2K" : (n.res >= 1450 ? "1.5K" : "1K"))) : "2K";
       var gradId = "sncCg_" + String(n.id).replace(/[^a-zA-Z0-9_-]/g, "");
       var ahead = Math.max(0, (n.queueAhead || 1) - 1);
-      var topBadge = isQueued ? "排队中" : "已提交 · 0.0s";
+      var topBadge = isQueued ? "排队中" : "渲染中 · 0.0s";
       var pillTxt = isQueued ? (ahead > 0 ? ("排队中 · 前方 " + ahead + " 项") : "排队中 · 即将开始") : "模型构图渲染中";
       var metaTxt = isQueued ? (mLabel + " · " + rLabel + " · 等待空闲槽位") : (mLabel + " · " + rLabel + " · 0.0s");
+      /* v3.8.13：DOM 结构 1:1 照 ai.html 的 .gen-card > .gen-visual：
+         潜影 → 光斑 → 左上时间徽标 → 居中内容列（胶囊 / 提示词 / 元信息+取消）→ 环（最后，压在最上层）。
+         旧实现把 prompt 和「元信息+取消」拆成两行贴在底部，跟参考稿的「一列居中」差得很远。 */
       body.innerHTML =
         '<div class="snc-gen ' + (isQueued ? "is-queued" : "is-waiting") + '">' +
+          '<div class="snc-gen-wait">' +
+            latentHTML +
+            '<div class="snc-gen-mesh" aria-hidden="true"></div>' +
+            '<span class="snc-prog-pct">' + topBadge + '</span>' +
+            '<div class="snc-gen-center">' +
+              '<div class="snc-gen-stagepill"><i class="snc-gen-dot"></i><span class="snc-gen-stagetxt">' + pillTxt + '</span></div>' +
+              '<p class="snc-gen-q"></p>' +
+              '<div class="snc-gen-subrow">' +
+                '<span class="snc-gen-meta">' + metaTxt + '</span>' +
+                '<button type="button" class="snc-gen-cancel" data-gen-cancel="1">取消</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
           '<svg class="snc-prog-ring" viewBox="0 0 100 100" aria-hidden="true">' +
             '<defs><linearGradient id="' + gradId + '" x1="0%" y1="0%" x2="100%" y2="100%">' +
               '<stop offset="0%" stop-color="var(--accent-bright, var(--accent))" stop-opacity="1"/>' +
               '<stop offset="55%" stop-color="var(--accent)" stop-opacity="0.88"/>' +
-              '<stop offset="100%" stop-color="var(--accent)" stop-opacity="0.16"/>' +
+              '<stop offset="100%" stop-color="var(--accent)" stop-opacity="0.18"/>' +
             '</linearGradient></defs>' +
             '<path class="snc-prog-track" d="M50 1 H89 A10 10 0 0 1 99 11 V89 A10 10 0 0 1 89 99 H11 A10 10 0 0 1 1 89 V11 A10 10 0 0 1 11 1 H50"></path>' +
             '<path class="snc-prog-arc" stroke="url(#' + gradId + ')" d="M50 1 H89 A10 10 0 0 1 99 11 V89 A10 10 0 0 1 89 99 H11 A10 10 0 0 1 1 89 V11 A10 10 0 0 1 11 1 H50"></path>' +
           '</svg>' +
-          '<span class="snc-prog-pct">' + topBadge + '</span>' +
-          '<div class="snc-gen-wait">' +
-            latentHTML +
-            '<div class="snc-gen-mesh" aria-hidden="true"></div>' +
-            '<div class="snc-gen-stagepill"><i class="snc-gen-dot"></i><span class="snc-gen-stagetxt">' + pillTxt + '</span></div>' +
-            '<div class="snc-gen-q"></div>' +
-            '<div class="snc-gen-subrow">' +
-              '<span class="snc-gen-meta">' + metaTxt + '</span>' +
-              '<button type="button" class="snc-gen-cancel" data-gen-cancel="1">取消</button>' +
-            '</div>' +
-          '</div>' +
         '</div>';
       body.querySelector(".snc-gen-q").textContent = n.prompt || "";
       var cBtn = body.querySelector("[data-gen-cancel]");
@@ -9519,7 +9535,8 @@ var root = document.getElementById("snc");
       var badge = h.querySelector(".snc-prog-pct");
       if(badge){
         badge.hidden = false;
-        badge.textContent = (phase === "waiting" ? "渲染中 · " : (phase === "submitted" ? "已提交 · " : (PHASE[phase].pct + "% · "))) + t;
+        badge.textContent = (phase === "queued") ? "排队中"
+          : ((phase === "waiting" ? "渲染中 · " : "已提交 · ") + t);
       }
       var meta = h.querySelector(".snc-gen-meta");
       if(meta) meta.textContent = mTag + " · " + rTag + " · " + t;
