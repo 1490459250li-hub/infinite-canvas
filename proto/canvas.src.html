@@ -2827,8 +2827,10 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
    v3.8.7 · 预览效果 1:1 对齐：画布窗口呼吸灯 + AI 生成卡片排版精修
    ============================================================================ */
 /* 1. 画布窗口四边呼吸灯（设置 → 外观主题「画布窗口呼吸灯」开关控制 .breath-on） */
+/* v3.8.10：移除旧版 60px 高的实色顶部遮罩伪元素（z-index:19），彻底消除画布顶部黑条 */
+#snc .snc-stage::before{ display:none !important; }
 #snc .snc-breath-lamp{
-  position:absolute; top:44px; left:0; right:0; bottom:0; z-index:4; pointer-events:none;
+  position:absolute; top:44px; left:0; right:0; bottom:0; z-index:25; pointer-events:none;
   opacity:0; transition:opacity .45s ease;
 }
 #snc .snc-breath-lamp::before{
@@ -3595,7 +3597,7 @@ html.snc-shell #sncWinFrame.is-max{ --winbar-h:38px; }
             </span>
             <div class="snc-about-id">
               <b>无限画布</b>
-              <span id="sncAboutVer">v3.8.9 · 静谧微光版 · 本地桥接</span>
+              <span id="sncAboutVer">v3.8.10 · 静谧微光版 · 本地桥接</span>
             </div>
           </div>
           <dl class="snc-about-list">
