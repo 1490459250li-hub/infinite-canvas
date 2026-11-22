@@ -5647,7 +5647,15 @@ var root = document.getElementById("snc");
       var latentSrc = "";
       var parentId = (n.from && n.from.length) ? n.from[0] : "";
       if(parentId){
-        var pNode = byId(parentId);
+        /* v3.8.12：这里原本调 byId(parentId)，但工程里从来没有 byId 这个函数
+           （只有同名的局部映射对象，作用域不对）。派生卡一定带 from，
+           于是每次画生成中的派生卡都会抛 ReferenceError，renderAll 的
+           forEach 随之中断 —— 表现就是「只看到一条连线，新卡不见」。
+           改成直接在 state.nodes 里找。 */
+        var pNode = null;
+        for(var pi = 0; pi < state.nodes.length; pi++){
+          if(state.nodes[pi].id === parentId){ pNode = state.nodes[pi]; break; }
+        }
         if(pNode) latentSrc = pNode.cachedThumb || pNode.dataUrl || "";
       }
       if(!latentSrc && typeof jobOpts === "object" && jobOpts[n.id] && jobOpts[n.id].refs && jobOpts[n.id].refs.length){
